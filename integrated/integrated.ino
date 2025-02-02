@@ -1,3 +1,6 @@
+#define PACKET_DELAY 50  // Milliseconds between packets
+#define MAX_PACKET_SIZE 64
+
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
@@ -31,7 +34,7 @@ int flexSensorValues[5];
 
 void setup() {
   Serial.begin(115200);            // Initialize Serial communication
-  if (BLUETOOTH) SerialBT.begin("ESP32"); // Start Bluetooth with a device name
+  if (BLUETOOTH) SerialBT.begin("ESP32", true); // Start Bluetooth with a device name
   delay(100);
   myPrintln("Bluetooth Device is Ready to Pair");
   
@@ -81,6 +84,52 @@ int getSensorData(int pin) {
 }
 
 void loop() {
+  // Only send data if Bluetooth is connected
+  if (SerialBT.connected()) {
+    // Build one packet containing all data
+    String packet = "";
+
+    // Read Hall sensor values
+    packet += "Analog Sensor Values: [";
+    for (int i = 0; i < 5; i++) {
+      hallSensorValues[i] = analogRead(hallSensorPins[i]);
+      packet += String(hallSensorValues[i]);
+      if (i < 4) packet += ", ";
+    }
+    packet += "]\n";
+
+    // Read MPU6050 data
+    sensors_event_t a, g, temp;
+    mpu.getEvent(&a, &g, &temp);
+    packet += "Accel: " + String(a.acceleration.x) + ", " 
+                      + String(a.acceleration.y) + ", " 
+                      + String(a.acceleration.z) + "\n";
+    packet += "Rot: " + String(g.gyro.x) + ", " 
+                    + String(g.gyro.y) + ", " 
+                    + String(g.gyro.z) + "\n";
+
+    // Read Flex sensor values
+    packet += "Flex Val: [";
+    for (int i = 0; i < 5; i++) {
+      flexSensorValues[i] = getSensorData(flexSensorPins[i]);
+      packet += String(flexSensorValues[i]) + "%";
+      if (i < 4) packet += ", ";
+    }
+    packet += "]\n";
+
+    // Send the entire packet over Bluetooth
+    SerialBT.print(packet);
+    SerialBT.flush();  // Ensure the data is pushed out
+  }
+  else {
+    // Optionally, you could print a message locally or try to reinitialize if needed.
+    // For now, we'll simply not send data until a connection is established.
+  }
+
+  delay(500); // Increase delay to give Windows time to process data
+}
+
+/*void loop() {
   // Read Hall sensor values
   for (int i = 0; i < 5; i++) {
     hallSensorValues[i] = analogRead(hallSensorPins[i]);
@@ -97,22 +146,30 @@ void loop() {
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
 
-  myPrint("Acceleration X: ");
+  myPrint("Accel: ");
   myPrint(String(a.acceleration.x));
-  myPrint(", Y: ");
+  myPrint(", ");
   myPrint(String(a.acceleration.y));
-  myPrint(", Z: ");
+  myPrint(", ");
   myPrintln(String(a.acceleration.z));
 
-  myPrint("Rotation X: ");
+  myPrint("Rot: ");
   myPrint(String(g.gyro.x));
-  myPrint(", Y: ");
+  myPrint(", ");
   myPrint(String(g.gyro.y));
-  myPrint(", Z: ");
+  myPrint(", ");
   myPrintln(String(g.gyro.z));
 
-  // Read Flex sensor values
+  myPrint("Flex Val: [");
   for (int i = 0; i < 5; i++) {
+    flexSensorValues[i] = getSensorData(flexSensorPins[i]);
+    myPrint(String(flexSensorValues[i]) + "%");
+    if (i < 4) myPrint(", ");
+  }
+  myPrintln("]");
+
+  // Read Flex sensor values
+  /*for (int i = 0; i < 5; i++) {
     myPrint("Finger ");
     switch (i) {
       case 0: myPrint("Thumb "); break;
@@ -126,5 +183,10 @@ void loop() {
     myPrintln("Bent Percent: " + String(flexSensorValues[i]) + "%");
   }
 
-  delay(500); // Wait for 500ms
-}
+  if (!SerialBT.connected()) {
+    SerialBT.begin("ESP32"); // Restart Bluetooth if disconnected
+  }
+
+  //SerialBT.flush();
+  delay(250); // Wait for 500ms
+}*/
