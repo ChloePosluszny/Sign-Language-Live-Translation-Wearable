@@ -1,5 +1,7 @@
 #define PACKET_DELAY 50  // Milliseconds between packets
 #define MAX_PACKET_SIZE 64
+#define NUM_HALL 3
+#define NUM_FLEX 5
 
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
@@ -27,10 +29,10 @@ void myPrintln(const String &message = "") {
   }
 }
 
-const int flexSensorPins[5] = {26, 27, 14, 12, 13}; // Flex sensor pins
-const int hallSensorPins[5] = {34, 35, 32, 33, 25}; // Hall sensor pins
-int hallSensorValues[5];                            // Store Hall sensor values
-int flexSensorValues[5];
+const int flexSensorPins[NUM_FLEX] = {26, 27, 14, 12, 13}; // Flex sensor pins
+const int hallSensorPins[NUM_HALL] = {34, 35, 32}; // Hall sensor pins
+int hallSensorValues[NUM_HALL];                            // Store Hall sensor values
+int flexSensorValues[NUM_FLEX];
 
 void setup() {
   Serial.begin(115200);            // Initialize Serial communication
@@ -38,9 +40,12 @@ void setup() {
   delay(100);
   myPrintln("Bluetooth Device is Ready to Pair");
   
-  for (int i = 0; i < 5; i++) {
-    pinMode(hallSensorPins[i], INPUT);  // Set Hall sensor pins as input
+  for (int i = 0; i < NUM_FLEX; i++) {
     pinMode(flexSensorPins[i], INPUT); // Set Flex sensor pins as input
+  }
+
+  for (int i = 0; i < NUM_HALL; i++) {
+    pinMode(hallSensorPins[i], INPUT);  // Set Hall sensor pins as input
   }
 
   myPrintln("Adafruit MPU6050 test!");
@@ -83,7 +88,7 @@ int getSensorData(int pin) {
   return sensorDataPercent;
 }
 
-void loop() {
+/*void loop() {
   // Only send data if Bluetooth is connected
   if (SerialBT.connected()) {
     // Build one packet containing all data
@@ -91,10 +96,10 @@ void loop() {
 
     // Read Hall sensor values
     packet += "Analog Sensor Values: [";
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < NUM_HALL; i++) {
       hallSensorValues[i] = analogRead(hallSensorPins[i]);
       packet += String(hallSensorValues[i]);
-      if (i < 4) packet += ", ";
+      if (i < NUM_HALL - 1) packet += ", ";
     }
     packet += "]\n";
 
@@ -110,10 +115,10 @@ void loop() {
 
     // Read Flex sensor values
     packet += "Flex Val: [";
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < NUM_FLEX; i++) {
       flexSensorValues[i] = getSensorData(flexSensorPins[i]);
       packet += String(flexSensorValues[i]) + "%";
-      if (i < 4) packet += ", ";
+      if (i < NUM_FLEX - 1) packet += ", ";
     }
     packet += "]\n";
 
@@ -122,23 +127,19 @@ void loop() {
     SerialBT.flush();  // Ensure the data is pushed out
   }
   else {
-    // Optionally, you could print a message locally or try to reinitialize if needed.
-    // For now, we'll simply not send data until a connection is established.
+    Serial.print("Disconnected");
   }
 
-  delay(500); // Increase delay to give Windows time to process data
-}
+  delay(250); // Increase delay to give Windows time to process data
+}*/
 
-/*void loop() {
-  // Read Hall sensor values
-  for (int i = 0; i < 5; i++) {
-    hallSensorValues[i] = analogRead(hallSensorPins[i]);
-  }
-
+void loop() {
+  // Print sensor data regardless of BT connection.
   myPrint("Analog Sensor Values: [");
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < NUM_HALL; i++) {
+    hallSensorValues[i] = analogRead(hallSensorPins[i]);
     myPrint(String(hallSensorValues[i]));
-    if (i < 4) myPrint(", ");
+    if (i < NUM_HALL - 1) myPrint(", ");
   }
   myPrintln("]");
 
@@ -161,32 +162,19 @@ void loop() {
   myPrintln(String(g.gyro.z));
 
   myPrint("Flex Val: [");
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < NUM_FLEX; i++) {
     flexSensorValues[i] = getSensorData(flexSensorPins[i]);
     myPrint(String(flexSensorValues[i]) + "%");
-    if (i < 4) myPrint(", ");
+    if (i < NUM_FLEX - 1) myPrint(", ");
   }
   myPrintln("]");
 
-  // Read Flex sensor values
-  /*for (int i = 0; i < 5; i++) {
-    myPrint("Finger ");
-    switch (i) {
-      case 0: myPrint("Thumb "); break;
-      case 1: myPrint("Index "); break;
-      case 2: myPrint("Middle "); break;
-      case 3: myPrint("Ring "); break;
-      case 4: myPrint("Pinkie "); break;
-      default: myPrint("Unknown ");
+  // Only check Bluetooth status if Bluetooth is enabled
+  if (BLUETOOTH) {
+    if (!SerialBT.connected()) {
+      Serial.print("Bluetooth not connected\n");
     }
-    flexSensorValues[i] = getSensorData(flexSensorPins[i]);
-    myPrintln("Bent Percent: " + String(flexSensorValues[i]) + "%");
   }
 
-  if (!SerialBT.connected()) {
-    SerialBT.begin("ESP32"); // Restart Bluetooth if disconnected
-  }
-
-  //SerialBT.flush();
-  delay(250); // Wait for 500ms
-}*/
+  delay(250); // Adjust delay as needed
+}
