@@ -8,7 +8,7 @@
 #include <Wire.h>
 #include "BluetoothSerial.h"
 
-const bool BLUETOOTH = true; // Set to true to enable Bluetooth output
+const bool BLUETOOTH = false; // Set to true to enable Bluetooth output
 
 BluetoothSerial SerialBT;
 Adafruit_MPU6050 mpu;
@@ -134,40 +134,36 @@ int getSensorData(int pin) {
 }*/
 
 void loop() {
+  //Serial.print("In loop");
   // Print sensor data regardless of BT connection.
-  myPrint("Analog Sensor Values: [");
   for (int i = 0; i < NUM_HALL; i++) {
     hallSensorValues[i] = analogRead(hallSensorPins[i]);
     myPrint(String(hallSensorValues[i]));
-    if (i < NUM_HALL - 1) myPrint(", ");
+    if (i < NUM_HALL) myPrint(", ");
   }
-  myPrintln("]");
+
+  for (int i = 0; i < NUM_FLEX; i++) {
+    flexSensorValues[i] = analogRead(flexSensorPins[i]);
+    myPrint(String(flexSensorValues[i]));
+    if (i < NUM_FLEX) myPrint(", ");
+  }
 
   // Read MPU6050 data
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
 
-  myPrint("Accel: ");
   myPrint(String(a.acceleration.x));
   myPrint(", ");
   myPrint(String(a.acceleration.y));
   myPrint(", ");
-  myPrintln(String(a.acceleration.z));
-
-  myPrint("Rot: ");
+  myPrint(String(a.acceleration.z));
+  myPrint(", ");
   myPrint(String(g.gyro.x));
   myPrint(", ");
   myPrint(String(g.gyro.y));
   myPrint(", ");
-  myPrintln(String(g.gyro.z));
-
-  myPrint("Flex Val: [");
-  for (int i = 0; i < NUM_FLEX; i++) {
-    flexSensorValues[i] = getSensorData(flexSensorPins[i]);
-    myPrint(String(flexSensorValues[i]) + "%");
-    if (i < NUM_FLEX - 1) myPrint(", ");
-  }
-  myPrintln("]");
+  myPrint(String(g.gyro.z));
+  myPrintln();
 
   // Only check Bluetooth status if Bluetooth is enabled
   if (BLUETOOTH) {
@@ -176,5 +172,5 @@ void loop() {
     }
   }
 
-  delay(250); // Adjust delay as needed
+  delay(100); // Adjust delay as needed
 }
