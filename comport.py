@@ -2,7 +2,7 @@ import serial
 import time
 
 # Configure these values
-BLUETOOTH_COM_PORT = 'COM5'  # Ensure this is the correct port
+BLUETOOTH_COM_PORT = 'COM6'  # Ensure this is the correct port
 BAUD_RATE = 115200           # Must match ESP32's baud rate
 
 def read_bluetooth_serial():

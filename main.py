@@ -86,7 +86,7 @@ def process_poll(poll_data):
                     header = SENSOR_NAMES_DOUBLE[:len(combined_data)]
                 else:
                     header = SENSOR_NAMES_SINGLE[:len(combined_data)]
-                header.append(CSV_TITLE)  # Append the title at the end of the header
+                header.append('sign')  # Append the title at the end of the header
                 writer.writerow(header)
             # Append the title to the row and write it
             writer.writerow(combined_data + [CSV_TITLE])
