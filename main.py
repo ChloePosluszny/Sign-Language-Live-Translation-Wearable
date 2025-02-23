@@ -2,6 +2,8 @@ import serial
 import time
 import csv
 import torch  # PyTorch required for loading .pth models
+import joblib #Required to load MLP Classifier from sklearn
+import numpy as np
 import os
 
 # -------------------------------
@@ -26,7 +28,7 @@ BAUD_RATE = 115200           # Must match the ESP32's baud rate
 # -------------------------------
 CSV_FILE_PATH = None  # Will be set based on user input if TRAINING_MODE is True
 CSV_TITLE = None      # Global title for the CSV
-MODEL_PATH = "model.pth"
+MODEL_PATH = "mlp_translation_model.pkl"
 model = None
 
 # Predefined sensor names (modify as needed for your setup)
@@ -39,8 +41,9 @@ def load_model():
     """
     global model
     try:
-        model = torch.load(MODEL_PATH)
-        model.eval()
+        # model = torch.load(MODEL_PATH)
+        # model.eval()
+        model = joblib.load(MODEL_PATH)
         print("Model loaded successfully.")
     except Exception as e:
         print(f"Error loading model: {e}")
@@ -58,7 +61,11 @@ def translate_data(poll_data):
     if model is None:
         return "Model not loaded"
     # Example: Convert poll_data to a tensor, process it with the model, then decode the result.
-    return "Translated output"
+    else:
+        converted_data = np.array(poll_data)
+        converted_data = converted_data.reshape(1,-1)
+        prediction = model.predict(converted_data)
+        return prediction[0]
 
 def process_poll(poll_data):
     """
