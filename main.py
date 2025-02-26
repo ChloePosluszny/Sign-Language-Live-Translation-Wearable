@@ -2,14 +2,18 @@ import serial
 import time
 import csv
 import torch  # PyTorch required for loading .pth models
-import joblib #Required to load MLP Classifier from sklearn
+import joblib # Required to load MLP Classifier from sklearn
 import numpy as np
 import os
+import sklearn
+
+my_dict = {'ALFONSO': 'a', 'CHLOE': 'c', 'DAVID': 'd', 'ERIK': 'e', 'RAHMAN': 'r'}
 
 # -------------------------------
 # Global Mode Flags (toggle as needed)
 # -------------------------------
 TRAINING_MODE = True          # True: training (write to CSV), False: output (ML inference)
+TRAINER_NAME = 'DAVID'
 COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
 
@@ -40,6 +44,7 @@ def load_model():
     Loads the PyTorch model from the specified MODEL_PATH.
     """
     global model
+    print(f"Attempting to load model from: {MODEL_PATH}")
     try:
         # model = torch.load(MODEL_PATH)
         # model.eval()
@@ -164,7 +169,7 @@ if __name__ == "__main__":
         # Prompt the user for the CSV title; this will be used as the file name (with .csv extension)
         # and appended to each row.
         CSV_TITLE = input("Enter CSV title: ")
-        CSV_FILE_PATH = f"training_data/{CSV_TITLE}.csv"
+        CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{my_dict[TRAINER_NAME]}.csv"
     # In output mode, load the ML model.
     if not TRAINING_MODE:
         load_model()
