@@ -6,6 +6,7 @@ import joblib # Required to load MLP Classifier from sklearn
 import numpy as np
 import os
 import sklearn
+import pandas as pd
 
 my_dict = {'ALFONSO': 'a', 'CHLOE': 'c', 'DAVID': 'd', 'ERIK': 'e', 'RAHMAN': 'r'}
 
@@ -67,6 +68,11 @@ def translate_data(poll_data):
         return "Model not loaded"
     # Example: Convert poll_data to a tensor, process it with the model, then decode the result.
     else:
+        #test to see if works
+        # df_data = pd.DataFrame(poll_data, columns=SENSOR_NAMES_SINGLE)
+        # prediction = model.predict(df_data)
+        # return prediction[0]
+
         converted_data = np.array(poll_data)
         converted_data = converted_data.reshape(1,-1)
         prediction = model.predict(converted_data)

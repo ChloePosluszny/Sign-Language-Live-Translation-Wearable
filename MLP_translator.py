@@ -18,42 +18,70 @@ dfc = pd.read_csv("training_data/c_a.csv")
 dfd = pd.read_csv("training_data/d_a.csv")
 dfe = pd.read_csv("training_data/e_a.csv")
 dflove = pd.read_csv("training_data/i love you_a.csv")
-dff = pd.read_csv("f_a.csv")
-dfg = pd.read_csv("g_a.csv")
-dfh = pd.read_csv("h_a.csv")
-dfi = pd.read_csv("i_a.csv")
-#dfj = pd.read_csv("j_a.csv")
-dfk = pd.read_csv("k_a.csv")
-dfl = pd.read_csv("l_a.csv")
-dfm = pd.read_csv("m_a.csv")
-dfn = pd.read_csv("n_a.csv")
-dfo = pd.read_csv("o_a.csv")
-dfp = pd.read_csv("p_a.csv")
-dfq = pd.read_csv("q_a.csv")
-dfr = pd.read_csv("r_a.csv")
-dfs = pd.read_csv("s_a.csv")
-dft = pd.read_csv("t_a.csv")
-dfu = pd.read_csv("u_a.csv")
-dfv = pd.read_csv("v_a.csv")
-dfw = pd.read_csv("w_a.csv")
-dfx = pd.read_csv("x_a.csv")
-dfy = pd.read_csv("y_a.csv")
-#dfz = pd.read_csv("z_a.csv")
+dff = pd.read_csv("training_data/f_a.csv")
+dfg = pd.read_csv("training_data/g_a.csv")
+dfh = pd.read_csv("training_data/h_a.csv")
+dfi = pd.read_csv("training_data/i_a.csv")
+dfk = pd.read_csv("training_data/k_a.csv")
+dfl = pd.read_csv("training_data/l_a.csv")
+dfm = pd.read_csv("training_data/m_a.csv")
+dfn = pd.read_csv("training_data/n_a.csv")
+dfo = pd.read_csv("training_data/o_a.csv")
+dfp = pd.read_csv("training_data/p_a.csv")
+dfq = pd.read_csv("training_data/q_a.csv")
+dfr = pd.read_csv("training_data/r_a.csv")
+dfs = pd.read_csv("training_data/s_a.csv")
+dft = pd.read_csv("training_data/t_a.csv")
+dfu = pd.read_csv("training_data/u_a.csv")
+dfv = pd.read_csv("training_data/v_a.csv")
+dfw = pd.read_csv("training_data/w_a.csv")
+dfx = pd.read_csv("training_data/x_a.csv")
+dfy = pd.read_csv("training_data/y_a.csv")
+
+dfa_d = pd.read_csv('training_data/a_d.csv')
+dfb_d = pd.read_csv("training_data/b_d.csv")
+dfc_d = pd.read_csv("training_data/c_d.csv")
+dfd_d = pd.read_csv("training_data/d_d.csv")
+dfe_d = pd.read_csv("training_data/e_d.csv")
+dflove_d = pd.read_csv("training_data/i love you_d.csv")
+dff_d = pd.read_csv("training_data/f_d.csv")
+dfg_d = pd.read_csv("training_data/g_d.csv")
+dfh_d = pd.read_csv("training_data/h_d.csv")
+dfi_d = pd.read_csv("training_data/i_d.csv")
+dfk_d = pd.read_csv("training_data/k_d.csv")
+dfl_d = pd.read_csv("training_data/l_d.csv")
+dfm_d = pd.read_csv("training_data/m_d.csv")
+dfn_d = pd.read_csv("training_data/n_d.csv")
+dfo_d = pd.read_csv("training_data/o_d.csv")
+dfp_d = pd.read_csv("training_data/p_d.csv")
+dfq_d = pd.read_csv("training_data/q_d.csv")
+dfr_d = pd.read_csv("training_data/r_d.csv")
+dfs_d = pd.read_csv("training_data/s_d.csv")
+dft_d = pd.read_csv("training_data/t_d.csv")
+dfu_d = pd.read_csv("training_data/u_d.csv")
+dfv_d = pd.read_csv("training_data/v_d.csv")
+dfw_d = pd.read_csv("training_data/w_d.csv")
+dfx_d = pd.read_csv("training_data/x_d.csv")
+dfy_d = pd.read_csv("training_data/y_d.csv")
+
+
+data = pd.concat([
+    dfa, dfb, dfc, dfd, dflove, dfe, dff, dfg, dfh, dfi, dfk, dfl, dfm, dfn, dfo,
+    dfp, dfq, dfr, dfs, dft, dfu, dfv, dfw, dfx, dfy,
+    dfa_d, dfb_d, dfc_d, dfd_d, dflove_d, dfe_d, dff_d, dfg_d, dfh_d, dfi_d, dfk_d, dfl_d, 
+    dfm_d, dfn_d, dfo_d, dfp_d, dfq_d, dfr_d, dfs_d, dft_d, dfu_d, dfv_d, dfw_d, dfx_d, dfy_d
+], ignore_index=True)
 
 # data = pd.concat([dfa, dfb, dfc, dfd,
-#                   dfe, dff, dfg, dfh, dfi, dfj, dfk, dfl, dfm, dfn, dfo,
-#                     dfp, dfq, dfr, dfs, dft, dfu, dfv, dfw, dfx, dfy, dfz,], ignore_index=True)
-
-data = pd.concat([dfa, dfb, dfc, dfd,
-                  dfe, dflove,], ignore_index=True)
-print(data)
+#                   dfe, dflove,], ignore_index=True)
+# print(data)
 
 X = data.drop(['sign'],  axis='columns')
 y = data['sign']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle=True, random_state=42)
 
-Classifier = MLPClassifier(hidden_layer_sizes=(128, 64), activation= 'relu',random_state= 42)
+Classifier = MLPClassifier(hidden_layer_sizes=(256, 128, 64), activation= 'relu',random_state= 42)
 
 Classifier.fit(X_train, y_train)
 
