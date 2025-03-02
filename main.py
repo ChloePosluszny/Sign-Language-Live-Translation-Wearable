@@ -6,6 +6,7 @@ import joblib # Required to load MLP Classifier from sklearn
 import numpy as np
 import os
 import sklearn
+from sklearn.neural_network import MLPClassifier
 import pandas as pd
 
 my_dict = {'ALFONSO': 'a', 'CHLOE': 'c', 'DAVID': 'd', 'ERIK': 'e', 'RAHMAN': 'r'}
@@ -68,6 +69,10 @@ def translate_data(poll_data):
         return "Model not loaded"
     # Example: Convert poll_data to a tensor, process it with the model, then decode the result.
     else:
+        scaler = joblib.load("scaler.pkl")
+        poll_data = scaler.transform(poll_data)
+        probabilities = model.predict_proba(converted_data)
+
         #test to see if works
         # df_data = pd.DataFrame(poll_data, columns=SENSOR_NAMES_SINGLE)
         # prediction = model.predict(df_data)
@@ -76,7 +81,7 @@ def translate_data(poll_data):
         converted_data = np.array(poll_data)
         converted_data = converted_data.reshape(1,-1)
         prediction = model.predict(converted_data)
-        return prediction[0]
+        return prediction[0],probabilities
 
 def process_poll(poll_data):
     """
@@ -111,8 +116,9 @@ def process_poll(poll_data):
         print("Data written to CSV.")
     else:
         # Output mode: process the data using the ML model.
-        output = translate_data(poll_data)
+        output,proba = translate_data(poll_data)
         print("Output:", output)
+        print("probs", proba)
 
 def parse_line_to_array(line):
     """
