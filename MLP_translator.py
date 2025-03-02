@@ -73,9 +73,15 @@ dflove = pd.read_csv("training_data/i-love-you_c.csv")
 #     dfm_d, dfn_d, dfo_d, dfp_d, dfq_d, dfr_d, dfs_d, dft_d, dfu_d, dfv_d, dfw_d, dfx_d, dfy_d
 # ], ignore_index=True)
 
+# data = pd.concat([
+#     dfa, dfb, dfc, dfd, dflove, dfe, dff, dfg, dfh, dfi, dfk, dfl, dfm, dfn, dfo,
+#     dfp, dfq, dfr, dfs, dft, dfu, dfv, dfw, dfx, dfy,
+# ], ignore_index=True)
+
+#d co u y
 data = pd.concat([
-    dfa, dfb, dfc, dfd, dflove, dfe, dff, dfg, dfh, dfi, dfk, dfl, dfm, dfn, dfo,
-    dfp, dfq, dfr, dfs, dft, dfu, dfv, dfw, dfx, dfy,
+    dfa, dfb, dfc, dflove, dfe, dff, dfg, dfh, dfi, dfk,dfl,   dfm, dfn, dfo,dfp, dfq, dfr, dfs,
+    dft, dfu, dfv, dfw, dfx, dfy,
 ], ignore_index=True)
 
 # data = pd.concat([dfa, dfb, dfc, dfd,

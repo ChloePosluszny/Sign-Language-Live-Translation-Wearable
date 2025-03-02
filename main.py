@@ -18,7 +18,7 @@ my_dict = {'ALFONSO': 'a', 'CHLOE': 'c', 'DAVID': 'd', 'ERIK': 'e', 'RAHMAN': 'r
 # -------------------------------
 # Global Mode Flags (toggle as needed)
 # -------------------------------
-TRAINING_MODE = True          # True: training (write to CSV), False: output (ML inference)
+TRAINING_MODE = False         # True: training (write to CSV), False: output (ML inference)
 TRAINER_NAME = 'DAVID'
 COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
@@ -51,6 +51,7 @@ def load_model():
     Loads the PyTorch model from the specified MODEL_PATH.
     """
     global model
+    global scaler
     print(f"Attempting to load model from: {MODEL_PATH}")
     try:
         # model = torch.load(MODEL_PATH)
@@ -90,6 +91,7 @@ def translate_data(poll_data):
         prediction = model.predict(converted_data)
         return prediction[0],probabilities
 
+old_letter = None
 def process_poll(poll_data):
     """
     Processes a complete poll of sensor data based on the current mode.
@@ -124,8 +126,10 @@ def process_poll(poll_data):
     else:
         # Output mode: process the data using the ML model.
         output,proba = translate_data(poll_data)
-        print("Output:", output)
-        print("probs", proba)
+        if(output != old_letter):
+            print("Output:", output)
+            old_letter = output
+            # print("probs", proba)
 
 def parse_line_to_array(line):
     """
