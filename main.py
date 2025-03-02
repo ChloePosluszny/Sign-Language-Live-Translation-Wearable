@@ -91,7 +91,7 @@ def translate_data(poll_data):
         prediction = model.predict(converted_data)
         return prediction[0],probabilities
 
-old_letter = None
+# old_letter = "*"
 def process_poll(poll_data):
     """
     Processes a complete poll of sensor data based on the current mode.
@@ -103,6 +103,7 @@ def process_poll(poll_data):
     Args:
         poll_data: List of arrays from the glove(s).
     """
+    # global old_letter
     if TRAINING_MODE:
         if GLOVE_MODE == "DOUBLE":
             combined_data = poll_data[0] + poll_data[1]
@@ -126,10 +127,11 @@ def process_poll(poll_data):
     else:
         # Output mode: process the data using the ML model.
         output,proba = translate_data(poll_data)
-        if(output != old_letter):
-            print("Output:", output)
-            old_letter = output
+        # if output != old_letter:
+        #     print("Output:", output)
+        #     old_letter = output
             # print("probs", proba)
+        print("Output:", output)
 
 def parse_line_to_array(line):
     """
