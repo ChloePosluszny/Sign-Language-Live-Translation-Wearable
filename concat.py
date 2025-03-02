@@ -3,49 +3,54 @@ import pandas as pd
 
 '''
 Usage:
-GetFiles() gets each CSV file name and groups them by word/letter
-ConcatenateFiles() concatenates the CSVs in each word/letter group into one CSV for that word/letter group
-CombineFiles() gets all the CSVs and combines them into a single CSV file
+GetFiles() gets each CSV file name and groups them by word/letter or by user
+ConcatenateFiles_Multiple() concatenates the CSVs in each group into one CSV for that group
+ConcatenateFiles_All() gets all the CSVs and combines them into a single CSV file
 '''
 
-TRAINING_DATA = "training_data"
+TRAINING_DATA_PATH = "training_data"
+CONCATENATED_DATA_PATH = "concatenated_data"
 
-# Key is the letter/word to be saved as one file
-# Value is the name of each file for the letter/word
+SPLIT_GROUPING = 1 # 0 = group by word/letter, 1 = group by user
+
+# Key is the grouping to be saved as one file
+# Value is the name of each file for the group
 training_files = {}
 
 # Get each individual training data file (deprecated)
 def GetFiles():
-    for root, dirs, files in os.walk(f"{TRAINING_DATA}/"):
+    for root, dirs, files in os.walk(f"{TRAINING_DATA_PATH}/"):
         for file in files:
-            file_split = file.split("_")
-            if file_split[0] not in training_files:
-                training_files[file_split[0]] = []
-            training_files[file_split[0]].append(file)
+            file_split = file.split("_")[SPLIT_GROUPING]
+            if "." in file_split:
+                file_split = file_split.split(".")[0]
+            if file_split not in training_files:
+                training_files[file_split] = []
+            training_files[file_split].append(file)
     return
 
-# Concatenate the individual training data files into concatenated training data files (deprecated)
-def ConcatenateFiles():
+# Concatenate the individual training data files into concatenated training data files
+def ConcatenateFiles_Multiple():
     for basefile in training_files:
         data = []
         for file in training_files[basefile]:
-            df = pd.read_csv(f"{TRAINING_DATA}/{file}")
+            df = pd.read_csv(f"{TRAINING_DATA_PATH}/{file}")
             data.append(df)
         new_Data = pd.concat(data)
-        new_Data.to_csv(f"{TRAINING_DATA}/{basefile}.csv", index=False)
+        new_Data.to_csv(f"{CONCATENATED_DATA_PATH}/{basefile}.csv", index=False)
     return
 
-# Concatenate the individual training data files into one training data file (deprecated)
-def CombineFiles():
+# Concatenate the individual training data files into one training data file
+def ConcatenateFiles_All():
     data = []
-    for root, dirs, files in os.walk(f"{TRAINING_DATA}/"):
+    for root, dirs, files in os.walk(f"{TRAINING_DATA_PATH}/"):
         for file in files:
-            df = pd.read_csv(f"{TRAINING_DATA}/{file}")
+            df = pd.read_csv(f"{TRAINING_DATA_PATH}/{file}")
             data.append(df)
     new_data = pd.concat(data)
     new_data.to_csv(f"database.csv", index=False)
     return
 
-# GetFiles()
-# ConcatenateFiles()
-CombineFiles()
+GetFiles()
+ConcatenateFiles_Multiple()
+# ConcatenateFiles_All()
