@@ -9,6 +9,10 @@ import sklearn
 from sklearn.neural_network import MLPClassifier
 import pandas as pd
 
+import warnings
+warnings.filterwarnings('ignore')
+
+
 my_dict = {'ALFONSO': 'a', 'CHLOE': 'c', 'DAVID': 'd', 'ERIK': 'e', 'RAHMAN': 'r'}
 
 # -------------------------------
@@ -36,6 +40,7 @@ CSV_FILE_PATH = None  # Will be set based on user input if TRAINING_MODE is True
 CSV_TITLE = None      # Global title for the CSV
 MODEL_PATH = "mlp_translation_model.pkl"
 model = None
+scaler = None
 
 # Predefined sensor names (modify as needed for your setup)
 SENSOR_NAMES_SINGLE = ["hall_1", "hall_2", "hall_3", "flex_t", "flex_i", "flex_m", "flex_r", "flex_p", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z"]
@@ -51,6 +56,7 @@ def load_model():
         # model = torch.load(MODEL_PATH)
         # model.eval()
         model = joblib.load(MODEL_PATH)
+        scaler = joblib.load("scaler.pkl")
         print("Model loaded successfully.")
     except Exception as e:
         print(f"Error loading model: {e}")
@@ -69,9 +75,9 @@ def translate_data(poll_data):
         return "Model not loaded"
     # Example: Convert poll_data to a tensor, process it with the model, then decode the result.
     else:
-        scaler = joblib.load("scaler.pkl")
+        
         poll_data = scaler.transform(poll_data)
-        probabilities = model.predict_proba(converted_data)
+        
 
         #test to see if works
         # df_data = pd.DataFrame(poll_data, columns=SENSOR_NAMES_SINGLE)
@@ -79,6 +85,7 @@ def translate_data(poll_data):
         # return prediction[0]
 
         converted_data = np.array(poll_data)
+        probabilities = model.predict_proba(converted_data)
         converted_data = converted_data.reshape(1,-1)
         prediction = model.predict(converted_data)
         return prediction[0],probabilities

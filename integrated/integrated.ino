@@ -172,5 +172,5 @@ void loop() {
     }
   }
 
-  delay(100); // Adjust delay as needed
+  delay(50); // Adjust delay as needed
 }
