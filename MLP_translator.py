@@ -107,7 +107,6 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle
 Classifier = MLPClassifier(hidden_layer_sizes=(256, 128, 64), batch_size= 16, learning_rate_init=0.001, activation= 'relu',random_state= 42)
 
 # Classifier.fit(X_train, y_train)
-
 # classifermlp = MLPClassifier(hidden_layer_sizes=(256, 128, 64), activation= 'relu',random_state= 42)
 
 
