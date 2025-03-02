@@ -158,6 +158,8 @@ def read_serial_data():
     """
     poll_data = []
     expected_arrays = 2 if GLOVE_MODE == "DOUBLE" else 1
+    
+    serial.Serial(COM_PORT, BAUD_RATE, timeout=1).close()
 
     try:
         with serial.Serial(COM_PORT, BAUD_RATE, timeout=1) as ser:
