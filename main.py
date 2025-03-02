@@ -13,7 +13,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-my_dict = {'ALFONSO': 'a', 'CHLOE': 'c', 'DAVID': 'd', 'ERIK': 'e', 'RAHMAN': 'r'}
+trainer_names = {'ALFONSO': 'a', 'CHLOE': 'c', 'DAVID': 'd', 'ERIK': 'e', 'RAHMAN': 'r'}
 
 # -------------------------------
 # Global Mode Flags (toggle as needed)
@@ -188,7 +188,10 @@ if __name__ == "__main__":
         # Prompt the user for the CSV title; this will be used as the file name (with .csv extension)
         # and appended to each row.
         CSV_TITLE = input("Enter CSV title: ")
-        CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{my_dict[TRAINER_NAME]}.csv"
+        CSV_SUBTITLE = input("Enter CSV subtitle: ")
+        if CSV_SUBTITLE is None:
+            CSV_SUBTITLE = trainer_names[TRAINER_NAME]
+        CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}.csv"
     # In output mode, load the ML model.
     if not TRAINING_MODE:
         load_model()

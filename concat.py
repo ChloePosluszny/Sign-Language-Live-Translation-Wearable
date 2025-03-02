@@ -11,7 +11,8 @@ ConcatenateFiles_All() gets all the CSVs and combines them into a single CSV fil
 TRAINING_DATA_PATH = "training_data"
 CONCATENATED_DATA_PATH = "concatenated_data"
 
-SPLIT_GROUPING = 1 # 0 = group by word/letter, 1 = group by user
+GROUPING_MODE = 1 # 0 = no grouping (single csv), 1 = grouping (multiple csv)
+SPLIT_GROUPING = 1 # 0 = group by title, 1 = group by subtitle
 
 # Key is the grouping to be saved as one file
 # Value is the name of each file for the group
@@ -51,6 +52,8 @@ def ConcatenateFiles_All():
     new_data.to_csv(f"database.csv", index=False)
     return
 
-GetFiles()
-ConcatenateFiles_Multiple()
-# ConcatenateFiles_All()
+if GROUPING_MODE is 1:
+    GetFiles()
+    ConcatenateFiles_Multiple()
+else:
+    ConcatenateFiles_All()
