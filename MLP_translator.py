@@ -13,31 +13,32 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import train_test_split
 import joblib
 
-dfa = pd.read_csv('training_data/a_c.csv')
-dfb = pd.read_csv("training_data/b_c.csv")
-dfc = pd.read_csv("training_data/c_c.csv")
-dfd = pd.read_csv("training_data/d_c.csv")
-dfe = pd.read_csv("training_data/e_c.csv")
-dff = pd.read_csv("training_data/f_c.csv")
-dfg = pd.read_csv("training_data/g_c.csv")
-dfh = pd.read_csv("training_data/h_c.csv")
-dfi = pd.read_csv("training_data/i_c.csv")
-dfk = pd.read_csv("training_data/k_c.csv")
-dfl = pd.read_csv("training_data/l_c.csv")
-dfm = pd.read_csv("training_data/m_c.csv")
-dfn = pd.read_csv("training_data/n_c.csv")
-dfo = pd.read_csv("training_data/o_c.csv")
-dfp = pd.read_csv("training_data/p_c.csv")
-dfq = pd.read_csv("training_data/q_c.csv")
-dfr = pd.read_csv("training_data/r_c.csv")
-dfs = pd.read_csv("training_data/s_c.csv")
-dft = pd.read_csv("training_data/t_c.csv")
-dfu = pd.read_csv("training_data/u_c.csv")
-dfv = pd.read_csv("training_data/v_c.csv")
-dfw = pd.read_csv("training_data/w_c.csv")
-dfx = pd.read_csv("training_data/x_c.csv")
-dfy = pd.read_csv("training_data/y_c.csv")
-dflove = pd.read_csv("training_data/i-love-you_c.csv")
+dfa = pd.read_csv('training_data/a_c2.csv')
+dfb = pd.read_csv("training_data/b_c2.csv")
+dfc = pd.read_csv("training_data/c_c2.csv")
+dfd = pd.read_csv("training_data/d_c2.csv")
+dfe = pd.read_csv("training_data/e_c2.csv")
+dff = pd.read_csv("training_data/f_c2.csv")
+dfg = pd.read_csv("training_data/g_c2.csv")
+dfh = pd.read_csv("training_data/h_c2.csv")
+dfi = pd.read_csv("training_data/i_c2.csv")
+dfk = pd.read_csv("training_data/k_c2.csv")
+dfl = pd.read_csv("training_data/l_c2.csv")
+dfm = pd.read_csv("training_data/m_c2.csv")
+dfn = pd.read_csv("training_data/n_c2.csv")
+dfo = pd.read_csv("training_data/o_c2.csv")
+dfp = pd.read_csv("training_data/p_c2.csv")
+dfq = pd.read_csv("training_data/q_c2.csv")
+dfr = pd.read_csv("training_data/r_c2.csv")
+dfs = pd.read_csv("training_data/s_c2.csv")
+dft = pd.read_csv("training_data/t_c2.csv")
+dfu = pd.read_csv("training_data/u_c2.csv")
+dfv = pd.read_csv("training_data/v_c2.csv")
+dfw = pd.read_csv("training_data/w_c2.csv")
+dfx = pd.read_csv("training_data/x_c2.csv")
+dfy = pd.read_csv("training_data/y_c2.csv")
+dflove = pd.read_csv("training_data/i-love-you_c2.csv")
+dfhook = pd.read_csv("training_data/Hook'em_c2.csv")
 
 # dfa_d = pd.read_csv('training_data/a_d.csv')
 # dfb_d = pd.read_csv("training_data/b_d.csv")
@@ -80,8 +81,8 @@ dflove = pd.read_csv("training_data/i-love-you_c.csv")
 
 #d co u y
 data = pd.concat([
-    dfa, dfb, dfc, dflove, dfe, dff, dfg, dfh, dfi, dfk,dfl,   dfm, dfn, dfo,dfp, dfq, dfr, dfs,
-    dft, dfu, dfv, dfw, dfx, dfy,
+    dfa, dfb, dfc, dfd, dfe, dff, dfg, dfh, dfi, dfk,dfl,   dfm, dfn,dfo, dfp, dfq, dfr,
+    dft, dfu, dfv, dfw, dfx,dfy, dfhook, dflove
 ], ignore_index=True)
 
 # data = pd.concat([dfa, dfb, dfc, dfd,
@@ -130,14 +131,14 @@ print("Test Accuracy: ", accuracy_score(y_test, y_test_pred))
 
 print(classification_report(y_test, y_test_pred))
 
-conf_matrix = confusion_matrix(y_test, y_test_pred)
+# conf_matrix = confusion_matrix(y_test, y_test_pred)
 
-plt.figure(figsize=(8, 6))
-sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=sorted(set(y_test)), yticklabels=sorted(set(y_test)))
-plt.xlabel('Predicted Labels')
-plt.ylabel('Actual Labels')
-plt.title('Confusion Matrix Heatmap')
-plt.show()
+# plt.figure(figsize=(8, 6))
+# sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=sorted(set(y_test)), yticklabels=sorted(set(y_test)))
+# plt.xlabel('Predicted Labels')
+# plt.ylabel('Actual Labels')
+# plt.title('Confusion Matrix Heatmap')
+# plt.show()
 
 
 joblib.dump(scaler, "scaler.pkl")

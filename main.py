@@ -18,8 +18,8 @@ trainer_names = {'ALFONSO': 'a', 'CHLOE': 'c', 'DAVID': 'd', 'ERIK': 'e', 'RAHMA
 # -------------------------------
 # Global Mode Flags (toggle as needed)
 # -------------------------------
-TRAINING_MODE = True         # True: training (write to CSV), False: output (ML inference)
-TRAINER_NAME = 'DAVID'
+TRAINING_MODE = True        # True: training (write to CSV), False: output (ML inference)
+TRAINER_NAME = 'ERIK'
 COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
 
@@ -27,7 +27,7 @@ GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" 
 # Communication Port Configuration
 # -------------------------------
 BLUETOOTH_COM_PORT = 'COM5'   # Port for Bluetooth
-SERIAL_COM_PORT = 'COM3'      # Port for direct serial connection (e.g., USB)
+SERIAL_COM_PORT = '/dev/cu.usbserial-0001'      # Port for direct serial connection (e.g., USB)
 
 # Select the appropriate COM port based on COMM_MODE
 COM_PORT = BLUETOOTH_COM_PORT if COMM_MODE == "BLUETOOTH" else SERIAL_COM_PORT
