@@ -18,7 +18,7 @@ trainer_names = {'ALFONSO': 'a', 'CHLOE': 'c', 'DAVID': 'd', 'ERIK': 'e', 'RAHMA
 # -------------------------------
 # Global Mode Flags (toggle as needed)
 # -------------------------------
-TRAINING_MODE = False         # True: training (write to CSV), False: output (ML inference)
+TRAINING_MODE = True         # True: training (write to CSV), False: output (ML inference)
 TRAINER_NAME = 'DAVID'
 COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
@@ -38,6 +38,7 @@ BAUD_RATE = 115200           # Must match the ESP32's baud rate
 # -------------------------------
 CSV_FILE_PATH = None  # Will be set based on user input if TRAINING_MODE is True
 CSV_TITLE = None      # Global title for the CSV
+TRAINING_TIME = 12
 MODEL_PATH = "mlp_translation_model.pkl"
 model = None
 scaler = None
@@ -165,7 +166,8 @@ def read_serial_data():
         with serial.Serial(COM_PORT, BAUD_RATE, timeout=1) as ser:
             print(f"Connected to {COM_PORT} in {COMM_MODE} mode.")
             buffer = ''
-            while True:
+            start_time = time.time()
+            while time.time() - start_time < TRAINING_TIME:
                 data = ser.read_all().decode('utf-8', errors='ignore')
                 if data:
                     buffer += data
@@ -191,15 +193,28 @@ def read_serial_data():
     finally:
         print("Port closed")
 
+# Prompt the user for the CSV title; this will be used as the file name (with .csv extension)
+# and appended to each row.
+def get_user_input():
+    global CSV_FILE_PATH
+    global TRAINING_TIME
+    global CSV_TITLE
+    global CSV_SUBTITLE
+    CSV_TITLE = input("Enter CSV title: ")
+    CSV_SUBTITLE = input("Enter CSV subtitle: ")
+    timer = input("Enter training time (in seconds):")
+    if CSV_SUBTITLE == '':
+        CSV_SUBTITLE = trainer_names[TRAINER_NAME]
+    if timer != '':
+        TRAINING_TIME = int(timer)
+    CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}.csv"
+    return
+
 if __name__ == "__main__":
     if TRAINING_MODE:
-        # Prompt the user for the CSV title; this will be used as the file name (with .csv extension)
-        # and appended to each row.
-        CSV_TITLE = input("Enter CSV title: ")
-        CSV_SUBTITLE = input("Enter CSV subtitle: ")
-        if CSV_SUBTITLE is None:
-            CSV_SUBTITLE = trainer_names[TRAINER_NAME]
-        CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}.csv"
+        while True: 
+            get_user_input()
+            read_serial_data()
     # In output mode, load the ML model.
     if not TRAINING_MODE:
         load_model()
