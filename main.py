@@ -166,8 +166,9 @@ def read_serial_data():
         with serial.Serial(COM_PORT, BAUD_RATE, timeout=1) as ser:
             print(f"Connected to {COM_PORT} in {COMM_MODE} mode.")
             buffer = ''
-            start_time = time.time()
-            while time.time() - start_time < TRAINING_TIME:
+            if TRAINING_MODE:
+                start_time = time.time()
+            while TRAINING_MODE == 0 or time.time() - start_time < TRAINING_TIME:
                 data = ser.read_all().decode('utf-8', errors='ignore')
                 if data:
                     buffer += data
