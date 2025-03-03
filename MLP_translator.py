@@ -13,31 +13,32 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import train_test_split
 import joblib
 
-dfa = pd.read_csv('training_data/a_c.csv')
-dfb = pd.read_csv("training_data/b_c.csv")
-dfc = pd.read_csv("training_data/c_c.csv")
-dfd = pd.read_csv("training_data/d_c.csv")
-dfe = pd.read_csv("training_data/e_c.csv")
-dff = pd.read_csv("training_data/f_c.csv")
-dfg = pd.read_csv("training_data/g_c.csv")
-dfh = pd.read_csv("training_data/h_c.csv")
-dfi = pd.read_csv("training_data/i_c.csv")
-dfk = pd.read_csv("training_data/k_c.csv")
-dfl = pd.read_csv("training_data/l_c.csv")
-dfm = pd.read_csv("training_data/m_c.csv")
-dfn = pd.read_csv("training_data/n_c.csv")
-dfo = pd.read_csv("training_data/o_c.csv")
-dfp = pd.read_csv("training_data/p_c.csv")
-dfq = pd.read_csv("training_data/q_c.csv")
-dfr = pd.read_csv("training_data/r_c.csv")
-dfs = pd.read_csv("training_data/s_c.csv")
-dft = pd.read_csv("training_data/t_c.csv")
-dfu = pd.read_csv("training_data/u_c.csv")
-dfv = pd.read_csv("training_data/v_c.csv")
-dfw = pd.read_csv("training_data/w_c.csv")
-dfx = pd.read_csv("training_data/x_c.csv")
-dfy = pd.read_csv("training_data/y_c.csv")
-dflove = pd.read_csv("training_data/i-love-you_c.csv")
+dfa = pd.read_csv('training_data/a_c2.csv').dropna
+dfb = pd.read_csv("training_data/b_c2.csv").dropna
+dfc = pd.read_csv("training_data/c_c2.csv").dropna
+dfd = pd.read_csv("training_data/d_c2.csv").dropna
+dfe = pd.read_csv("training_data/e_c2.csv").dropna
+dff = pd.read_csv("training_data/f_c2.csv").dropna
+dfg = pd.read_csv("training_data/g_c2.csv").dropna
+dfh = pd.read_csv("training_data/h_c2.csv").dropna
+dfi = pd.read_csv("training_data/i_c2.csv").dropna
+dfk = pd.read_csv("training_data/k_c2.csv").dropna
+dfl = pd.read_csv("training_data/l_c2.csv").dropna
+dfm = pd.read_csv("training_data/m_c2.csv").dropna
+dfn = pd.read_csv("training_data/n_c2.csv").dropna
+dfo = pd.read_csv("training_data/o_c2.csv").dropna
+dfp = pd.read_csv("training_data/p_c2.csv").dropna
+dfq = pd.read_csv("training_data/q_c2.csv").dropna
+dfr = pd.read_csv("training_data/r_c2.csv").dropna
+dfs = pd.read_csv("training_data/s_c2.csv").dropna
+dft = pd.read_csv("training_data/t_c2.csv").dropna
+dfu = pd.read_csv("training_data/u_c2.csv").dropna
+dfv = pd.read_csv("training_data/v_c2.csv").dropna
+dfw = pd.read_csv("training_data/w_c2.csv").dropna
+dfx = pd.read_csv("training_data/x_c2.csv").dropna
+dfy = pd.read_csv("training_data/y_c2.csv").dropna
+dflove = pd.read_csv("training_data/i-love-you_c2.csv").dropna
+dfhook = pd.read_csv("training_data/Hook'em_c2.csv").dropna
 
 # dfa_d = pd.read_csv('training_data/a_d.csv')
 # dfb_d = pd.read_csv("training_data/b_d.csv")
@@ -80,8 +81,8 @@ dflove = pd.read_csv("training_data/i-love-you_c.csv")
 
 #d co u y
 data = pd.concat([
-    dfa, dfb, dfc, dflove, dfe, dff, dfg, dfh, dfi, dfk,dfl,   dfm, dfn, dfo,dfp, dfq, dfr, dfs,
-    dft, dfu, dfv, dfw, dfx, dfy,
+    dfa, dfb, dfc, dfd, dfe, dff, dfg, dfh, dfi, dfk,dfl,   dfm, dfn, dfo,dfp, dfq, dfr, dfs,
+    dft, dfu, dfv, dfw, dfx, dfy, dfhook, dflove
 ], ignore_index=True)
 
 # data = pd.concat([dfa, dfb, dfc, dfd,
