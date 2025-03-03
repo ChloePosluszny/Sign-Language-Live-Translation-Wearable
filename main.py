@@ -92,6 +92,7 @@ def translate_data(poll_data):
         prediction = model.predict(converted_data)
         return prediction[0],probabilities
 
+translations = []
 # old_letter = "*"
 def process_poll(poll_data):
     """
@@ -132,7 +133,10 @@ def process_poll(poll_data):
         #     print("Output:", output)
         #     old_letter = output
             # print("probs", proba)
-        print("Output:", output)
+        translations.append(output)
+        if len(translations) == 10:
+            print("Output:", max(set(translations), key=translations.count))
+            translations.clear()
 
 def parse_line_to_array(line):
     """
@@ -166,8 +170,9 @@ def read_serial_data():
         with serial.Serial(COM_PORT, BAUD_RATE, timeout=1) as ser:
             print(f"Connected to {COM_PORT} in {COMM_MODE} mode.")
             buffer = ''
-            start_time = time.time()
-            while time.time() - start_time < TRAINING_TIME:
+            if TRAINING_MODE:
+                start_time = time.time()
+            while TRAINING_MODE == 0 or time.time() - start_time < TRAINING_TIME:
                 data = ser.read_all().decode('utf-8', errors='ignore')
                 if data:
                     buffer += data
