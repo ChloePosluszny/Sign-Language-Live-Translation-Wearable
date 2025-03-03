@@ -18,7 +18,7 @@ trainer_names = {'ALFONSO': 'a', 'CHLOE': 'c', 'DAVID': 'd', 'ERIK': 'e', 'RAHMA
 # -------------------------------
 # Global Mode Flags (toggle as needed)
 # -------------------------------
-TRAINING_MODE = True         # True: training (write to CSV), False: output (ML inference)
+TRAINING_MODE = False         # True: training (write to CSV), False: output (ML inference)
 TRAINER_NAME = 'DAVID'
 COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
@@ -92,6 +92,7 @@ def translate_data(poll_data):
         prediction = model.predict(converted_data)
         return prediction[0],probabilities
 
+translations = []
 # old_letter = "*"
 def process_poll(poll_data):
     """
@@ -132,7 +133,10 @@ def process_poll(poll_data):
         #     print("Output:", output)
         #     old_letter = output
             # print("probs", proba)
-        print("Output:", output)
+        translations.append(output)
+        if len(translations) == 10:
+            print("Output:", max(set(translations), key=translations.count))
+            translations.clear()
 
 def parse_line_to_array(line):
     """
