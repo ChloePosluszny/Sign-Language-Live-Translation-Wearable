@@ -52,7 +52,7 @@ def ConcatenateFiles_All():
     new_data.to_csv(f"database.csv", index=False)
     return
 
-if GROUPING_MODE is 1:
+if GROUPING_MODE == 1:
     GetFiles()
     ConcatenateFiles_Multiple()
 else:
