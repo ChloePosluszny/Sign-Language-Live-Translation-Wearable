@@ -8,7 +8,7 @@ import os
 import sklearn
 from sklearn.neural_network import MLPClassifier
 import pandas as pd
-
+from RNN_translator import RNN
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -39,9 +39,10 @@ BAUD_RATE = 115200           # Must match the ESP32's baud rate
 CSV_FILE_PATH = None  # Will be set based on user input if TRAINING_MODE is True
 CSV_TITLE = None      # Global title for the CSV
 TRAINING_TIME = 12
-MODEL_PATH = "mlp_translation_model.pkl"
+MODEL_PATH = "RNN_model.pth"
 model = None
 scaler = None
+label_encoder  = None
 
 # Predefined sensor names (modify as needed for your setup)
 SENSOR_NAMES_SINGLE = ["hall_1", "hall_2", "hall_3", "flex_t", "flex_i", "flex_m", "flex_r", "flex_p", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z"]
@@ -53,12 +54,16 @@ def load_model():
     """
     global model
     global scaler
+    global label_encoder
     print(f"Attempting to load model from: {MODEL_PATH}")
     try:
-        # model = torch.load(MODEL_PATH)
-        # model.eval()
-        model = joblib.load(MODEL_PATH)
-        scaler = joblib.load("scaler.pkl")
+        model = torch.load(MODEL_PATH, weights_only=False)
+        model.eval()
+        label_encoder = joblib.load("label_encoder.pkl")
+  
+
+        # model = joblib.load(MODEL_PATH)
+        # scaler = joblib.load("scaler.pkl")
         print("Model loaded successfully.")
     except Exception as e:
         print(f"Error loading model: {e}")
@@ -77,20 +82,38 @@ def translate_data(poll_data):
         return "Model not loaded"
     # Example: Convert poll_data to a tensor, process it with the model, then decode the result.
     else:
+        # if len(poll_data[0]) != 14:
+        #     return "not 14"
         
-        poll_data = scaler.transform(poll_data)
+        # poll_data = scaler.transform(poll_data)
         
-
         #test to see if works
         # df_data = pd.DataFrame(poll_data, columns=SENSOR_NAMES_SINGLE)
         # prediction = model.predict(df_data)
         # return prediction[0]
 
-        converted_data = np.array(poll_data)
-        probabilities = model.predict_proba(converted_data)
-        converted_data = converted_data.reshape(1,-1)
-        prediction = model.predict(converted_data)
-        return prediction[0],probabilities
+        # converted_data = np.array(poll_data)
+        # # probabilities = model.predict_proba(converted_data)
+        # converted_data = converted_data.reshape(1,-1)
+        # prediction = model.predict(converted_data)
+        # return prediction[0]
+    
+        #poll data should be a list of lists of sequence length data entries
+        tensor_input = torch.tensor(poll_data, dtype=torch.float32).unsqueeze(0)
+        if tensor_input.size(-1) != 14:
+            print(f"Expected 14 features, but got {tensor_input.size(-1)}")
+            return "Invalid input shape"
+
+        with torch.no_grad():
+            outputs = model(tensor_input)
+            _, predicted = torch.max(outputs, 1)
+            predicted_label = label_encoder.inverse_transform(predicted)
+            return predicted_label[0]
+        
+           
+            
+
+
 
 translations = []
 # old_letter = "*"
@@ -128,16 +151,24 @@ def process_poll(poll_data):
         print("Data written to CSV.")
     else:
         # Output mode: process the data using the ML model.
-        output,proba = translate_data(poll_data)
+        #test for 1 data entries rn
+        # if len(poll_data[0]) == 14:
+        #     output = translate_data(poll_data)
+        #     print("Output: ", output)
+        # else:
+        #     print(f"poll data has {len(poll_data)} features")
         # if output != old_letter:
         #     print("Output:", output)
         #     old_letter = output
             # print("probs", proba)
-        translations.append(output)
-        if len(translations) == 10:
-            print("Output:", max(set(translations), key=translations.count))
-            translations.clear()
-
+       
+        output = translate_data(poll_data)
+        print("Output: ", output)
+        # translations.append(output)
+        # if len(translations) == 10:
+        #     print("Output:", max(set(translations), key=translations.count))
+        #     translations.clear()
+        
 def parse_line_to_array(line):
     """
     Converts a comma-separated string of numbers into a list of floats.
