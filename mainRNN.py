@@ -18,7 +18,7 @@ trainer_names = {'ALFONSO': 'a', 'CHLOE': 'c3', 'DAVID': 'd', 'ERIK': 'e', 'RAHM
 # -------------------------------
 # Global Mode Flags (toggle as needed)
 # -------------------------------
-TRAINING_MODE = False        # True: training (write to CSV), False: output (ML inference)
+TRAINING_MODE = True        # True: training (write to CSV), False: output (ML inference)
 TRAINER_NAME = 'CHLOE'
 COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
@@ -38,11 +38,14 @@ BAUD_RATE = 115200           # Must match the ESP32's baud rate
 # -------------------------------
 CSV_FILE_PATH = None  # Will be set based on user input if TRAINING_MODE is True
 CSV_TITLE = None      # Global title for the CSV
-TRAINING_TIME = 12
+CSV_SUBTITLE = None
+iterations = 100
 MODEL_PATH = "RNN_model.pth"
 model = None
 scaler = None
 label_encoder  = None
+seq_len = 10
+WORD = ''
 
 # Predefined sensor names (modify as needed for your setup)
 SENSOR_NAMES_SINGLE = ["hall_1", "hall_2", "hall_3", "flex_t", "flex_i", "flex_m", "flex_r", "flex_p", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z"]
@@ -68,7 +71,9 @@ def load_model():
     except Exception as e:
         print(f"Error loading model: {e}")
 
-def translate_data(poll_data):
+
+RNN_buffer = []
+def translate_data():
     """
     Placeholder function for translating glove sensor data using a machine learning model.
     
@@ -87,19 +92,9 @@ def translate_data(poll_data):
         
         # poll_data = scaler.transform(poll_data)
         
-        #test to see if works
-        # df_data = pd.DataFrame(poll_data, columns=SENSOR_NAMES_SINGLE)
-        # prediction = model.predict(df_data)
-        # return prediction[0]
-
-        # converted_data = np.array(poll_data)
-        # # probabilities = model.predict_proba(converted_data)
-        # converted_data = converted_data.reshape(1,-1)
-        # prediction = model.predict(converted_data)
-        # return prediction[0]
-    
         #poll data should be a list of lists of sequence length data entries
-        tensor_input = torch.tensor(poll_data, dtype=torch.float32).unsqueeze(0)
+       
+        tensor_input = torch.tensor(RNN_buffer, dtype=torch.float32).unsqueeze(0)
         if tensor_input.size(-1) != 14:
             print(f"Expected 14 features, but got {tensor_input.size(-1)}")
             return "Invalid input shape"
@@ -111,12 +106,11 @@ def translate_data(poll_data):
             return predicted_label[0]
         
            
-            
-
-
+        
 
 translations = []
-# old_letter = "*"
+
+
 def process_poll(poll_data):
     """
     Processes a complete poll of sensor data based on the current mode.
@@ -129,12 +123,14 @@ def process_poll(poll_data):
         poll_data: List of arrays from the glove(s).
     """
     # global old_letter
+    global RNN_buffer
     if TRAINING_MODE:
         if GLOVE_MODE == "DOUBLE":
             combined_data = poll_data[0] + poll_data[1]
         else:  # SINGLE mode
             combined_data = poll_data[0]
         
+        RNN_buffer.append(combined_data)
         # Write to CSV with the CSV_TITLE appended.
         file_exists = os.path.isfile(CSV_FILE_PATH)
         with open(CSV_FILE_PATH, mode='a', newline='') as csv_file:
@@ -147,30 +143,24 @@ def process_poll(poll_data):
                 header.append('sign')  # Append the title at the end of the header
                 writer.writerow(header)
             # Append the title to the row and write it
-            writer.writerow(combined_data + [CSV_TITLE])
-        print("Data written to CSV.")
+            if len(RNN_buffer) == seq_len:
+                for i in range(seq_len):
+                    writer.writerow(RNN_buffer[i] + [CSV_TITLE])
+                RNN_buffer = []
+                print("Data written to CSV.")
     else:
-        # Output mode: process the data using the ML model.
-        #test for 1 data entries rn
-        # if len(poll_data[0]) == 14:
-        #     output = translate_data(poll_data)
-        #     print("Output: ", output)
-        # else:
-        #     print(f"poll data has {len(poll_data)} features")
-        # if output != old_letter:
-        #     print("Output:", output)
-        #     old_letter = output
-            # print("probs", proba)
         data = poll_data[0]
         if len(data) != 14:
             print(f"Skipping bad data: expected 14, got {len(data)} → {data}")
             return
-        output = translate_data(poll_data)
-        print("Output: ", output)
-        # translations.append(output)
-        # if len(translations) == 10:
-        #     print("Output:", max(set(translations), key=translations.count))
-        #     translations.clear()
+        RNN_buffer.append(poll_data[0])
+        if(len(RNN_buffer) == seq_len):
+            output = translate_data()
+            print("Output: ", output)
+            # WORD += output
+            RNN_buffer = []
+    
+    
         
 def parse_line_to_array(line):
     """
@@ -187,48 +177,67 @@ def parse_line_to_array(line):
     except ValueError:
         print("Error parsing line:", line)
         return []
+    
+
+
+
 
 def read_serial_data():
-    """
-    Connects to the specified COM port (Bluetooth or Serial) and continuously reads data.
-    
-    Depending on GLOVE_MODE, it expects either one or two 1D arrays per poll. Once the
-    expected number of arrays is received, the poll is processed according to TRAINING_MODE.
-    """
+
     poll_data = []
     expected_arrays = 2 if GLOVE_MODE == "DOUBLE" else 1
-    
     serial.Serial(COM_PORT, BAUD_RATE, timeout=1).close()
-
     try:
         with serial.Serial(COM_PORT, BAUD_RATE, timeout=1) as ser:
             print(f"Connected to {COM_PORT} in {COMM_MODE} mode.")
             buffer = ''
             if TRAINING_MODE:
-                start_time = time.time()
-            while TRAINING_MODE == 0 or time.time() - start_time < TRAINING_TIME:
-                data = ser.read_all().decode('utf-8', errors='ignore')
-                if data:
-                    buffer += data
-                    # Process complete lines from the buffer.
-                    while '\n' in buffer:
-                        line_end = buffer.find('\n')
-                        line = buffer[:line_end].strip()
-                        buffer = buffer[line_end + 1:]
-                        if line:
+                for _ in range(iterations):
+                    input(f"Press ENTER when ready to sign {CSV_TITLE}")
+                    ser.reset_input_buffer()  # Flush old data
+                    poll_data = []
+                    samples_collected = 0
+
+                    while samples_collected < seq_len:
+                        data = ser.read(ser.in_waiting or 1).decode('utf-8', errors='ignore')
+                        if data:
+                            buffer += data
+                            while '\n' in buffer:
+                                line_end = buffer.find('\n')
+                                line = buffer[:line_end].strip()
+                                buffer = buffer[line_end + 1:]
+
+                                data_array = parse_line_to_array(line)
+                                if data_array:
+                                    poll_data.append(data_array)
+                                    if len(poll_data) == expected_arrays:
+                                        process_poll(poll_data)
+                                        poll_data.clear()
+                                        samples_collected += 1
+                    else:
+                        time.sleep(0.01)
+            else: #testing
+                while (1):
+                    expected_arrays = 2 if GLOVE_MODE == "DOUBLE" else 1 
+                    data = ser.read_all().decode('utf-8', errors='ignore')
+                    if data:
+                        buffer += data
+                        while '\n' in buffer:
+                            line_end = buffer.find('\n')
+                            line = buffer[:line_end].strip()
+                            buffer = buffer[line_end + 1:]
                             data_array = parse_line_to_array(line)
                             if data_array:
                                 poll_data.append(data_array)
-                                # Once we've collected the expected arrays, process the poll.
                                 if len(poll_data) == expected_arrays:
                                     process_poll(poll_data)
-                                    poll_data = []  # Reset for the next poll
-                else:
-                    time.sleep(0.01)  # Prevent busy waiting
+                                    poll_data.clear()
+                    else:
+                        time.sleep(0.01)
     except serial.SerialException as e:
         print(f"Serial error: {e}")
     except KeyboardInterrupt:
-        print("Stopped by user")
+        print("Stopped by user.")
     finally:
         print("Port closed")
 
@@ -236,21 +245,28 @@ def read_serial_data():
 # and appended to each row.
 def get_user_input():
     global CSV_FILE_PATH
-    global TRAINING_TIME
-    global CSV_TITLE
     global CSV_SUBTITLE
-    CSV_TITLE = input("Enter CSV title: ")
-    CSV_SUBTITLE = input("Enter CSV subtitle: ")
-    timer = input("Enter training time (in seconds):")
+    global CSV_TITLE
+
+    
+    CSV_TITLE = input("Enter CSV title (Sign): ")
+    
     if CSV_SUBTITLE == '':
         CSV_SUBTITLE = trainer_names[TRAINER_NAME]
-    if timer != '':
-        TRAINING_TIME = int(timer)
+    
     CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}.csv"
+    print(CSV_SUBTITLE)
     return
 
-if __name__ == "__main__":
+
+    
+
+def main():
     if TRAINING_MODE:
+        global CSV_SUBTITLE
+        global iterations
+        CSV_SUBTITLE = input("Enter CSV subtitle (trainer): ")
+        iterations = int(input("Enter number of data points to be signed: "))
         while True: 
             get_user_input()
             read_serial_data()
@@ -258,3 +274,6 @@ if __name__ == "__main__":
     if not TRAINING_MODE:
         load_model()
     read_serial_data()
+
+if __name__ == "__main__":
+    main()

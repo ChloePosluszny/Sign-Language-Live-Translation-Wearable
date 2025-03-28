@@ -17,7 +17,7 @@ class RNN(nn.Module):
         super(RNN, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.rnn = nn.GRU(input_size, hidden_size, num_layers=num_layers, batch_first=True)
+        self.rnn = nn.RNN(input_size, hidden_size, num_layers=num_layers, batch_first=True)
         self.fc = nn.Linear(hidden_size, num_classes) 
 
     def forward(self, x):
@@ -29,7 +29,14 @@ class RNN(nn.Module):
 
 if __name__ == "__main__":
     # Load Data
-    data = pd.read_csv('concatenated_data/c2.csv')
+    data = pd.read_csv('concatenated_data/d.csv')
+    df = pd.read_csv("concatenated_data/c2.csv")
+    dfa = pd.read_csv("concatenated_data/a.csv")
+    dfc = pd.read_csv("concatenated_data/c.csv")
+
+    data = pd.concat([
+   data, df,dfa,dfc
+], ignore_index=True)
 
     X = data.drop(['sign'], axis='columns').values 
     y = data['sign']
@@ -42,14 +49,14 @@ if __name__ == "__main__":
     #will be constant depending on what why decide and how many signs there are
     input_size = X.shape[1]  # Number of features
     num_classes = len(set(y)) #number of signs
-    sequence_length = 1
+    sequence_length = 10
 
     # parameters to play around with to get higher test accuracy
     num_layers = 4
     hidden_size = 256
     lr = .00079
 
-    num_epochs = 200
+    num_epochs = 500
 
 
     num_sequences = X.shape[0] // sequence_length
@@ -157,6 +164,7 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.show()
+    plt.savefig('RNN_Plots.png')
 
 
 

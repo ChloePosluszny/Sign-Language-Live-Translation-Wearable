@@ -36,9 +36,7 @@ dft = pd.read_csv("training_data/t_c3.csv")
 dfu = pd.read_csv("training_data/u_c3.csv")
 dfv = pd.read_csv("training_data/v_c3.csv")
 dfw = pd.read_csv("training_data/w_c3.csv")
-dfx = pd.read_csv("training_data/x_c3.csv")
 dfy = pd.read_csv("training_data/y_c3.csv")
-dfz = pd.read_csv("training_data/z_c3.csv")
 dflove = pd.read_csv("training_data/i-love-you_c3.csv")
 dfhook = pd.read_csv("training_data/Hook'em_c3.csv")
 
@@ -84,7 +82,7 @@ dfhook = pd.read_csv("training_data/Hook'em_c3.csv")
 #d co u y
 data = pd.concat([
     dfa, dfb, dfc, dfd, dfe, dfg, dfh, dfi, dfj, dfk,dfl,   dfm, dfn,dfo, dfp, dfq, dfr, dfs,
-    dft, dfu, dfv, dfx,dfy, dfz, dfhook, dflove
+    dft, dfu, dfv,dfy, dfhook, dflove
 ], ignore_index=True)
 
 # data = pd.concat([dfa, dfb, dfc, dfd,
