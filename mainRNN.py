@@ -8,7 +8,7 @@ import os
 import sklearn
 from sklearn.neural_network import MLPClassifier
 import pandas as pd
-from RNN_translator import RNN
+from Train_RNN import RNN
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -18,8 +18,8 @@ trainer_names = {'ALFONSO': 'a', 'CHLOE': 'c3', 'DAVID': 'd', 'ERIK': 'e', 'RAHM
 # -------------------------------
 # Global Mode Flags (toggle as needed)
 # -------------------------------
-TRAINING_MODE = True        # True: training (write to CSV), False: output (ML inference)
-TRAINER_NAME = 'CHLOE'
+TRAINING_MODE = False        # True: training (write to CSV), False: output (ML inference)
+TRAINER_NAME = 'DAVID'
 COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
 
@@ -44,9 +44,9 @@ MODEL_PATH = "RNN_model.pth"
 model = None
 scaler = None
 label_encoder  = None
-seq_len = 10
+seq_len = 20
 WORD = ''
-
+all_labels = None
 # Predefined sensor names (modify as needed for your setup)
 SENSOR_NAMES_SINGLE = ["hall_1", "hall_2", "hall_3", "flex_t", "flex_i", "flex_m", "flex_r", "flex_p", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z"]
 SENSOR_NAMES_DOUBLE = SENSOR_NAMES_SINGLE + [name + "_R" for name in SENSOR_NAMES_SINGLE]
@@ -58,11 +58,13 @@ def load_model():
     global model
     global scaler
     global label_encoder
+    global all_labels
     print(f"Attempting to load model from: {MODEL_PATH}")
     try:
         model = torch.load(MODEL_PATH, weights_only=False)
         model.eval()
         label_encoder = joblib.load("label_encoder.pkl")
+        all_labels = label_encoder.classes_
   
 
         # model = joblib.load(MODEL_PATH)
@@ -72,6 +74,7 @@ def load_model():
         print(f"Error loading model: {e}")
 
 
+    
 RNN_buffer = []
 def translate_data():
     """
@@ -83,14 +86,12 @@ def translate_data():
     Returns:
         A string representing the translated output.
     """
+    global WORD
     if model is None:
         return "Model not loaded"
     # Example: Convert poll_data to a tensor, process it with the model, then decode the result.
     else:
-        # if len(poll_data[0]) != 14:
-        #     return "not 14"
-        
-        # poll_data = scaler.transform(poll_data)
+       
         
         #poll data should be a list of lists of sequence length data entries
        
@@ -99,18 +100,31 @@ def translate_data():
             print(f"Expected 14 features, but got {tensor_input.size(-1)}")
             return "Invalid input shape"
 
+        
         with torch.no_grad():
             outputs = model(tensor_input)
-            _, predicted = torch.max(outputs, 1)
+            probs = torch.softmax(outputs, dim=1)  
+            max_prob, predicted = torch.max(probs, dim=1)  
+
+            
+            label_prob_pairs = list(zip(all_labels, probs[0]))
+            # Sort by probability in descending order
+            sorted_pairs = sorted(label_prob_pairs, key=lambda x: x[1], reverse=True)
+            print("Labels and Probabilities:\n")
+            for label, prob in sorted_pairs:
+                print(f"Label: {label}, Probability: {prob.item() * 100:.2f}%")
+
             predicted_label = label_encoder.inverse_transform(predicted)
-            return predicted_label[0]
+            # print(f"\nOutput: {predicted_label[0]} with confidence {max_prob.item() * 100:.2f}") 
+            print(f"\n\033[32mOutput: {predicted_label[0]} with confidence {max_prob.item() * 100:.2f}%\033[0m")
+            WORD += predicted_label[0]
+
+
         
            
         
 
 translations = []
-
-
 def process_poll(poll_data):
     """
     Processes a complete poll of sensor data based on the current mode.
@@ -152,13 +166,13 @@ def process_poll(poll_data):
         data = poll_data[0]
         if len(data) != 14:
             print(f"Skipping bad data: expected 14, got {len(data)} → {data}")
-            return
+            return False
         RNN_buffer.append(poll_data[0])
         if(len(RNN_buffer) == seq_len):
-            output = translate_data()
-            print("Output: ", output)
-            # WORD += output
+            translate_data()
+            # print("Output: ", output)
             RNN_buffer = []
+        return True
     
     
         
@@ -183,7 +197,7 @@ def parse_line_to_array(line):
 
 
 def read_serial_data():
-
+    global WORD
     poll_data = []
     expected_arrays = 2 if GLOVE_MODE == "DOUBLE" else 1
     serial.Serial(COM_PORT, BAUD_RATE, timeout=1).close()
@@ -192,8 +206,8 @@ def read_serial_data():
             print(f"Connected to {COM_PORT} in {COMM_MODE} mode.")
             buffer = ''
             if TRAINING_MODE:
-                for _ in range(iterations):
-                    input(f"Press ENTER when ready to sign {CSV_TITLE}")
+                for i in range(iterations):
+                    input(f"Press ENTER when ready to sign {CSV_TITLE} Current iteration: {i}")
                     ser.reset_input_buffer()  # Flush old data
                     poll_data = []
                     samples_collected = 0
@@ -219,19 +233,35 @@ def read_serial_data():
             else: #testing
                 while (1):
                     expected_arrays = 2 if GLOVE_MODE == "DOUBLE" else 1 
-                    data = ser.read_all().decode('utf-8', errors='ignore')
-                    if data:
-                        buffer += data
-                        while '\n' in buffer:
-                            line_end = buffer.find('\n')
-                            line = buffer[:line_end].strip()
-                            buffer = buffer[line_end + 1:]
-                            data_array = parse_line_to_array(line)
-                            if data_array:
-                                poll_data.append(data_array)
-                                if len(poll_data) == expected_arrays:
-                                    process_poll(poll_data)
-                                    poll_data.clear()
+                     
+                    user_in = input(f"Press ENTER when ready ")
+                    if user_in == "p":
+                        print(f"\033[35m{WORD}\033[0m")
+                        continue
+                    if user_in == "d":
+                        WORD = WORD[:-1]
+                        print(f"\033[35m{WORD}\033[0m")
+                        continue
+                    ser.reset_input_buffer()  # Flush old data
+                    poll_data = []
+                    samples_collected = 0
+
+                    while samples_collected < seq_len:
+                        data = ser.read(ser.in_waiting or 1).decode('utf-8', errors='ignore')
+                        if data:
+                            buffer += data
+                            while '\n' in buffer:
+                                line_end = buffer.find('\n')
+                                line = buffer[:line_end].strip()
+                                buffer = buffer[line_end + 1:]
+
+                                data_array = parse_line_to_array(line)
+                                if data_array:
+                                    poll_data.append(data_array)
+                                    if len(poll_data) == expected_arrays:
+                                        if process_poll(poll_data):
+                                            samples_collected += 1
+                                        poll_data = []
                     else:
                         time.sleep(0.01)
     except serial.SerialException as e:

@@ -8,7 +8,7 @@ import os
 import sklearn
 from sklearn.neural_network import MLPClassifier
 import pandas as pd
-from RNN_translator import RNN
+from Train_RNN import RNN
 import warnings
 warnings.filterwarnings('ignore')
 

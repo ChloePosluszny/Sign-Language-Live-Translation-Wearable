@@ -29,13 +29,41 @@ class RNN(nn.Module):
 
 if __name__ == "__main__":
     # Load Data
-    data = pd.read_csv('concatenated_data/d.csv')
-    df = pd.read_csv("concatenated_data/c2.csv")
-    dfa = pd.read_csv("concatenated_data/a.csv")
-    dfc = pd.read_csv("concatenated_data/c.csv")
+    dfa = pd.read_csv('training_data/a_c3.csv')
+    dfb = pd.read_csv("training_data/b_c3.csv")
+    dfc = pd.read_csv("training_data/c_c3.csv")
+    dfd = pd.read_csv("training_data/d_c3.csv")
+    dfe = pd.read_csv("training_data/e_c3.csv")
+    dff = pd.read_csv("training_data/f_c3.csv")
+    dfg = pd.read_csv("training_data/g_c3.csv")
+    dfh = pd.read_csv("training_data/h_c3.csv")
+    dfi = pd.read_csv("training_data/i_c3.csv")
+    dfj = pd.read_csv("training_data/j_c3.csv")
+    dfk = pd.read_csv("training_data/k_c3.csv")
+    dfl = pd.read_csv("training_data/l_c3.csv")
+    dfm = pd.read_csv("training_data/m_c3.csv")
+    dfn = pd.read_csv("training_data/n_c3.csv")
+    dfo = pd.read_csv("training_data/o_c3.csv")
+    dfp = pd.read_csv("training_data/p_c3.csv")
+    dfq = pd.read_csv("training_data/q_c3.csv")
+    dfr = pd.read_csv("training_data/r_c3.csv")
+    dfs = pd.read_csv("training_data/s_c3.csv")
+    dft = pd.read_csv("training_data/t_c3.csv")
+    dfu = pd.read_csv("training_data/u_c3.csv")
+    dfv = pd.read_csv("training_data/v_c3.csv")
+    dfw = pd.read_csv("training_data/w_c3.csv")
+    dfy = pd.read_csv("training_data/y_c3.csv")
+    dflove = pd.read_csv("training_data/i-love-you_c3.csv")
+    dfhook = pd.read_csv("training_data/Hook'em_c3.csv")
+    dfj = pd.read_csv("training_data/j_d.csv")
+    dfz = pd.read_csv("training_data/z_d.csv")
+    dfty = pd.read_csv("training_data/thank-you_d.csv")
 
+   
+    
     data = pd.concat([
-   data, df,dfa,dfc
+    dfa, dfb, dfc, dfd, dfe, dfg, dfh, dfi, dfj, dfk,dfl,   dfm, dfn,dfo, dfp, dfq, dfr, dfs,
+    dft, dfu, dfv,dfy, dfhook, dflove, dfj, dfz, dfty
 ], ignore_index=True)
 
     X = data.drop(['sign'], axis='columns').values 
@@ -49,14 +77,14 @@ if __name__ == "__main__":
     #will be constant depending on what why decide and how many signs there are
     input_size = X.shape[1]  # Number of features
     num_classes = len(set(y)) #number of signs
-    sequence_length = 10
+    sequence_length = 20
 
     # parameters to play around with to get higher test accuracy
     num_layers = 4
     hidden_size = 256
     lr = .00079
 
-    num_epochs = 500
+    num_epochs = 300
 
 
     num_sequences = X.shape[0] // sequence_length
