@@ -1,4 +1,4 @@
-from spellchecker import SpellChecker
+# from spellchecker import SpellChecker
 import time
 import torch
 import torch.nn as nn
@@ -11,19 +11,32 @@ from collections import Counter
 import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
 import joblib
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
 class RNN(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, num_classes):
+    def __init__(self, input_size, hidden_size, num_layers, num_classes, dropout=0.3):
         super(RNN, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.rnn = nn.RNN(input_size, hidden_size, num_layers=num_layers, batch_first=True)
-        self.fc = nn.Linear(hidden_size, num_classes) 
+        self.rnn = nn.RNN(
+            input_size,
+            hidden_size,
+            num_layers=num_layers,
+            batch_first=True,
+            dropout=dropout if num_layers > 1 else 0 , 
+            nonlinearity='relu'
+        )
+        
+        self.dropout = nn.Dropout(dropout)  # Apply after RNN output
+        self.fc = nn.Linear(hidden_size, num_classes)
 
     def forward(self, x):
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size)
         out, _ = self.rnn(x, h0)
-        out = self.fc(out[:, -1, :]) 
+        out = self.dropout(out[:, -1, :])
+        out = self.fc(out) 
         return out
 
 
@@ -58,17 +71,25 @@ if __name__ == "__main__":
     dfj = pd.read_csv("training_data/j_d.csv")
     dfz = pd.read_csv("training_data/z_d.csv")
     dfty = pd.read_csv("training_data/thank-you_d.csv")
+    dfch = pd.read_csv("concatenated_data/c.csv")
+    dfch2 = pd.read_csv("concatenated_data/c2.csv")
+    dfal = pd.read_csv("concatenated_data/a.csv")
+    dfda = pd.read_csv("concatenated_data/d.csv")
+
 
    
-    
+
     data = pd.concat([
     dfa, dfb, dfc, dfd, dfe, dfg, dfh, dfi, dfj, dfk,dfl,   dfm, dfn,dfo, dfp, dfq, dfr, dfs,
-    dft, dfu, dfv,dfy, dfhook, dflove, dfj, dfz, dfty
+    dft, dfu, dfv,dfy, dfhook, dflove, dfj, dfz, dfty, dfch, dfch2, dfal, dfda
 ], ignore_index=True)
 
     X = data.drop(['sign'], axis='columns').values 
     y = data['sign']
 
+
+    # scaler = StandardScaler()
+    # X = scaler.fit_transform(X)
 
     label_encoder = LabelEncoder()
     y = label_encoder.fit_transform(y)  # Encode labels as integers
@@ -77,18 +98,20 @@ if __name__ == "__main__":
     #will be constant depending on what why decide and how many signs there are
     input_size = X.shape[1]  # Number of features
     num_classes = len(set(y)) #number of signs
+
+
     sequence_length = 20
 
     # parameters to play around with to get higher test accuracy
-    num_layers = 4
-    hidden_size = 256
-    lr = .00079
+    num_layers = 2
+    hidden_size = 128
+    lr = .0009
+    dropout = .3
 
-    num_epochs = 300
+    num_epochs = 200
 
 
     num_sequences = X.shape[0] // sequence_length
-
     X = X[:num_sequences * sequence_length].reshape(num_sequences, sequence_length, input_size)
     y = y[:num_sequences * sequence_length] 
     y = y[::sequence_length] #take every sequence_length element
@@ -103,7 +126,7 @@ if __name__ == "__main__":
 
 
 
-    model = RNN(input_size, hidden_size, num_layers, num_classes)
+    model = RNN(input_size, hidden_size, num_layers, num_classes, dropout)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr) #adam is best i found
 
@@ -167,6 +190,26 @@ if __name__ == "__main__":
         accuracy = (predicted == y_test_t).sum().item() / y_test_t.size(0)
         print(f"Best Test Accuracy: {accuracy * 100:.2f}% at epoch {best_test_acc_epoch +1}")
 
+        conf_matrix = confusion_matrix(y_test_t.numpy(), predicted.numpy())
+
+        # Get label names from the label encoder
+        class_labels = label_encoder.classes_
+
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues',
+                    xticklabels=class_labels,
+                    yticklabels=class_labels)
+
+        plt.xlabel('Predicted Labels')
+        plt.ylabel('Actual Labels')
+        plt.title('Confusion Matrix Heatmap')
+        plt.xticks(rotation=45)
+        plt.yticks(rotation=0)
+        plt.tight_layout()
+        plt.savefig('RNNHeatmap.PNG')
+        # plt.show()
+
+
 
 
     plt.figure(figsize=(12, 5))
@@ -191,8 +234,8 @@ if __name__ == "__main__":
     plt.gca().yaxis.set_major_formatter(PercentFormatter()) 
 
     plt.tight_layout()
-    plt.show()
-    plt.savefig('RNN_Plots.png')
+    plt.savefig('RNN_Plots.PNG')
+    # plt.show()
 
 
 

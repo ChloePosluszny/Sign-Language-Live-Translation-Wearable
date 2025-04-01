@@ -38,7 +38,7 @@ BAUD_RATE = 115200           # Must match the ESP32's baud rate
 # -------------------------------
 CSV_FILE_PATH = None  # Will be set based on user input if TRAINING_MODE is True
 CSV_TITLE = None      # Global title for the CSV
-TRAINING_TIME = 12
+TRAINING_TIME = 60
 MODEL_PATH = "RNN_model.pth"
 model = None
 scaler = None
