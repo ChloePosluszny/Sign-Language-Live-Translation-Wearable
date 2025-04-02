@@ -42,32 +42,7 @@ class RNN(nn.Module):
 
 if __name__ == "__main__":
     # Load Data
-    dfa = pd.read_csv('training_data/a_c3.csv')
-    dfb = pd.read_csv("training_data/b_c3.csv")
-    dfc = pd.read_csv("training_data/c_c3.csv")
-    dfd = pd.read_csv("training_data/d_c3.csv")
-    dfe = pd.read_csv("training_data/e_c3.csv")
-    dff = pd.read_csv("training_data/f_c3.csv")
-    dfg = pd.read_csv("training_data/g_c3.csv")
-    dfh = pd.read_csv("training_data/h_c3.csv")
-    dfi = pd.read_csv("training_data/i_c3.csv")
-    dfj = pd.read_csv("training_data/j_c3.csv")
-    dfk = pd.read_csv("training_data/k_c3.csv")
-    dfl = pd.read_csv("training_data/l_c3.csv")
-    dfm = pd.read_csv("training_data/m_c3.csv")
-    dfn = pd.read_csv("training_data/n_c3.csv")
-    dfo = pd.read_csv("training_data/o_c3.csv")
-    dfp = pd.read_csv("training_data/p_c3.csv")
-    dfq = pd.read_csv("training_data/q_c3.csv")
-    dfr = pd.read_csv("training_data/r_c3.csv")
-    dfs = pd.read_csv("training_data/s_c3.csv")
-    dft = pd.read_csv("training_data/t_c3.csv")
-    dfu = pd.read_csv("training_data/u_c3.csv")
-    dfv = pd.read_csv("training_data/v_c3.csv")
-    dfw = pd.read_csv("training_data/w_c3.csv")
-    dfy = pd.read_csv("training_data/y_c3.csv")
-    dflove = pd.read_csv("training_data/i-love-you_c3.csv")
-    dfhook = pd.read_csv("training_data/Hook'em_c3.csv")
+    dfc3 = pd.read_csv("concatenated_data/c3.csv")
     dfj = pd.read_csv("training_data/j_d.csv")
     dfz = pd.read_csv("training_data/z_d.csv")
     dfty = pd.read_csv("training_data/thank-you_d.csv")
@@ -76,12 +51,8 @@ if __name__ == "__main__":
     dfal = pd.read_csv("concatenated_data/a.csv")
     dfda = pd.read_csv("concatenated_data/d.csv")
 
-
-   
-
     data = pd.concat([
-    dfa, dfb, dfc, dfd, dfe, dfg, dfh, dfi, dfj, dfk,dfl,   dfm, dfn,dfo, dfp, dfq, dfr, dfs,
-    dft, dfu, dfv,dfy, dfhook, dflove, dfj, dfz, dfty, dfch, dfch2, dfal, dfda
+    dfc3, dfj, dfz, dfty, dfch, dfch2, dfal, dfda
 ], ignore_index=True)
 
     X = data.drop(['sign'], axis='columns').values 
