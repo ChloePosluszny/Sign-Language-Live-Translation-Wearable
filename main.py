@@ -109,11 +109,37 @@ def translate_data(poll_data):
             _, predicted = torch.max(outputs, 1)
             predicted_label = label_encoder.inverse_transform(predicted)
             return predicted_label[0]
-        
-           
-            
 
+def print_sensor_data(data: list):
+    print(f"Flex sensors: {data[0]}, {data[1]}, {data[2]}, {data[3]}")
+    print(f"Hall sensors: {data[4]}, {data[5]}, {data[6]}, {data[7]}")
+    print(f"Accelerometer: x={data[8]}, y={data[9]}, z={data[10]}")
+    print(f"Gyroscope: x={data[11]}, y={data[12]}, z={data[13]}")
+    return
 
+def print_to_csv(file_path: str, combined_data: list):
+    '''
+    Print out the data as a Comma Separate Value file
+
+    Args:
+        file_path: The file path to save the CSV
+        combined_data: A list of values
+    '''
+    # Write to CSV with the CSV_TITLE appended.
+    file_exists = os.path.isfile(file_path)
+    with open(file_path, mode='a', newline='') as csv_file:
+        writer = csv.writer(csv_file)
+        if not file_exists:
+            if GLOVE_MODE == "DOUBLE":
+                header = SENSOR_NAMES_DOUBLE[:len(combined_data)]
+            else:
+                header = SENSOR_NAMES_SINGLE[:len(combined_data)]
+            header.append('sign')  # Append the title at the end of the header
+            writer.writerow(header)
+        # Append the title to the row and write it
+        writer.writerow(combined_data + [CSV_TITLE])
+    print("Data written to CSV.")
+    return
 
 translations = []
 # old_letter = "*"
@@ -128,6 +154,7 @@ def process_poll(poll_data):
     Args:
         poll_data: List of arrays from the glove(s).
     """
+    combined_data = []
     # global old_letter
     if TRAINING_MODE:
         if GLOVE_MODE == "DOUBLE":
@@ -135,20 +162,8 @@ def process_poll(poll_data):
         else:  # SINGLE mode
             combined_data = poll_data[0]
         
-        # Write to CSV with the CSV_TITLE appended.
-        file_exists = os.path.isfile(CSV_FILE_PATH)
-        with open(CSV_FILE_PATH, mode='a', newline='') as csv_file:
-            writer = csv.writer(csv_file)
-            if not file_exists:
-                if GLOVE_MODE == "DOUBLE":
-                    header = SENSOR_NAMES_DOUBLE[:len(combined_data)]
-                else:
-                    header = SENSOR_NAMES_SINGLE[:len(combined_data)]
-                header.append('sign')  # Append the title at the end of the header
-                writer.writerow(header)
-            # Append the title to the row and write it
-            writer.writerow(combined_data + [CSV_TITLE])
-        print("Data written to CSV.")
+        print_to_csv(CSV_FILE_PATH, combined_data)
+
     else:
         # Output mode: process the data using the ML model.
         #test for 1 data entries rn
@@ -163,8 +178,10 @@ def process_poll(poll_data):
             # print("probs", proba)
         data = poll_data[0]
         if len(data) != 14:
-            print(f"Skipping bad data: expected 14, got {len(data)} → {data}")
+            #print(f"Skipping bad data: expected 14, got {len(data)} → {data}")
+            print_to_csv("error.csv", data)
             return
+        #print_sensor_data(data)
         output = translate_data(poll_data)
         print("Output: ", output)
         # translations.append(output)

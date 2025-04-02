@@ -167,6 +167,7 @@ def process_poll(poll_data):
         if len(data) != 14:
             print(f"Skipping bad data: expected 14, got {len(data)} → {data}")
             return False
+        print_sensor_data_rnn(data)
         RNN_buffer.append(poll_data[0])
         if(len(RNN_buffer) == seq_len):
             translate_data()
@@ -193,7 +194,12 @@ def parse_line_to_array(line):
         return []
     
 
-
+def print_sensor_data_rnn(data: list):
+    print(f"Flex sensors: {data[0]}, {data[1]}, {data[2]}, {data[3]}")
+    print(f"Hall sensors: {data[4]}, {data[5]}, {data[6]}, {data[7]}")
+    print(f"Accelerometer: x={data[8]}, y={data[9]}, z={data[10]}")
+    print(f"Gyroscope: x={data[11]}, y={data[12]}, z={data[13]}")
+    return
 
 
 def read_serial_data():
