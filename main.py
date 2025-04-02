@@ -20,8 +20,8 @@ trainer_names = {'ALFONSO': 'a', 'CHLOE': 'c3', 'DAVID': 'd', 'ERIK': 'e', 'RAHM
 # -------------------------------
 TRAINING_MODE = False        # True: training (write to CSV), False: output (ML inference)
 TRAINER_NAME = 'CHLOE'
-COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
-GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
+COMM_MODE = "SERIAL"         # Options: "BLUETOOTH" or "SERIAL"
+GLOVE_MODE = "SINGLE"        # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
 
 # -------------------------------
 # Communication Port Configuration
@@ -39,7 +39,7 @@ BAUD_RATE = 115200           # Must match the ESP32's baud rate
 CSV_FILE_PATH = None  # Will be set based on user input if TRAINING_MODE is True
 CSV_TITLE = None      # Global title for the CSV
 TRAINING_TIME = 60
-MODEL_PATH = "RNN_model.pth"
+MODEL_PATH = "RNN_model.pth" # Paths: RNN_model.pth, mlp_translation_model.pkl
 model = None
 scaler = None
 label_encoder  = None
@@ -59,11 +59,13 @@ def load_model():
     try:
         model = torch.load(MODEL_PATH, weights_only=False)
         model.eval()
-        label_encoder = joblib.load("label_encoder.pkl")
-  
 
-        # model = joblib.load(MODEL_PATH)
-        # scaler = joblib.load("scaler.pkl")
+        label_encoder = 0
+        if "RNN" in MODEL_PATH:
+            label_encoder = joblib.load("label_encoder.pkl")
+        elif "mlp" in MODEL_PATH:
+            model = joblib.load(MODEL_PATH)
+            scaler = joblib.load("scaler.pkl")
         print("Model loaded successfully.")
     except Exception as e:
         print(f"Error loading model: {e}")
@@ -82,33 +84,27 @@ def translate_data(poll_data):
         return "Model not loaded"
     # Example: Convert poll_data to a tensor, process it with the model, then decode the result.
     else:
-        # if len(poll_data[0]) != 14:
-        #     return "not 14"
+        #THIS IS MLP
+        if "mlp" in MODEL_PATH:
+            converted_data = np.array(poll_data)
+            # probabilities = model.predict_proba(converted_data)
+            converted_data = converted_data.reshape(1,-1)
+            prediction = model.predict(converted_data)
+            return prediction[0]
         
-        # poll_data = scaler.transform(poll_data)
-        
-        #test to see if works
-        # df_data = pd.DataFrame(poll_data, columns=SENSOR_NAMES_SINGLE)
-        # prediction = model.predict(df_data)
-        # return prediction[0]
+        elif "RNN" in MODEL_PATH:
+            #THIS IS RNN
+            #poll data should be a list of lists of sequence length data entries
+            tensor_input = torch.tensor(poll_data, dtype=torch.float32).unsqueeze(0)
+            if tensor_input.size(-1) != 14:
+                print(f"Expected 14 features, but got {tensor_input.size(-1)}")
+                return "Invalid input shape"
 
-        # converted_data = np.array(poll_data)
-        # # probabilities = model.predict_proba(converted_data)
-        # converted_data = converted_data.reshape(1,-1)
-        # prediction = model.predict(converted_data)
-        # return prediction[0]
-    
-        #poll data should be a list of lists of sequence length data entries
-        tensor_input = torch.tensor(poll_data, dtype=torch.float32).unsqueeze(0)
-        if tensor_input.size(-1) != 14:
-            print(f"Expected 14 features, but got {tensor_input.size(-1)}")
-            return "Invalid input shape"
-
-        with torch.no_grad():
-            outputs = model(tensor_input)
-            _, predicted = torch.max(outputs, 1)
-            predicted_label = label_encoder.inverse_transform(predicted)
-            return predicted_label[0]
+            with torch.no_grad():
+                outputs = model(tensor_input)
+                _, predicted = torch.max(outputs, 1)
+                predicted_label = label_encoder.inverse_transform(predicted)
+                return predicted_label[0]
 
 def print_sensor_data(data: list):
     print(f"Flex sensors: {data[0]}, {data[1]}, {data[2]}, {data[3]}")
