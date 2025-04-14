@@ -27,6 +27,7 @@ class RNN(nn.Module):
             batch_first=True,
             dropout=dropout if num_layers > 1 else 0 , 
             nonlinearity='relu'
+            
         )
         
         self.dropout = nn.Dropout(dropout)  # Apply after RNN output
@@ -42,25 +43,26 @@ class RNN(nn.Module):
 
 if __name__ == "__main__":
     # Load Data
-    dfc3 = pd.read_csv("concatenated_data/c3.csv")
-    dfj = pd.read_csv("training_data/j_d.csv")
-    dfz = pd.read_csv("training_data/z_d.csv")
-    dfty = pd.read_csv("training_data/thank-you_d.csv")
-    dfch = pd.read_csv("concatenated_data/c.csv")
-    dfch2 = pd.read_csv("concatenated_data/c2.csv")
-    dfal = pd.read_csv("concatenated_data/a.csv")
-    dfda = pd.read_csv("concatenated_data/d.csv")
+    # dfc3 = pd.read_csv("concatenated_data/c3.csv")
+    # dfj = pd.read_csv("training_data/j_d_dy.csv")
+    # dfz = pd.read_csv("training_data/z_d_dy.csv")
+    # dfty = pd.read_csv("training_data/thank-you_d_dy.csv")
+    # dfch = pd.read_csv("concatenated_data/c.csv")
+    # dfch2 = pd.read_csv("concatenated_data/c2.csv")
+    d1 = pd.read_csv("concatenated_data/a1.csv")
+    a1 = pd.read_csv("concatenated_data/d1.csv")
 
     data = pd.concat([
-    dfc3, dfj, dfz, dfty, dfch, dfch2, dfal, dfda
+    d1,a1
 ], ignore_index=True)
-
+    
     X = data.drop(['sign'], axis='columns').values 
     y = data['sign']
 
 
-    # scaler = StandardScaler()
-    # X = scaler.fit_transform(X)
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+    joblib.dump(scaler, "scaler.pkl")
 
     label_encoder = LabelEncoder()
     y = label_encoder.fit_transform(y)  # Encode labels as integers
@@ -74,12 +76,17 @@ if __name__ == "__main__":
     sequence_length = 20
 
     # parameters to play around with to get higher test accuracy
-    num_layers = 2
-    hidden_size = 128
-    lr = .0009
-    dropout = .3
+
+    num_layers = 1
+    hidden_size = 256
+    lr = .001
+    dropout = .2
+
+    
+    weight_decay = 1e-5 
 
     num_epochs = 200
+
 
 
     num_sequences = X.shape[0] // sequence_length
@@ -99,7 +106,7 @@ if __name__ == "__main__":
 
     model = RNN(input_size, hidden_size, num_layers, num_classes, dropout)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr) #adam is best i found
+    optimizer = optim.Adam(model.parameters(), lr, weight_decay=weight_decay) #adam is best i found
 
     # Training loop
     train_epoch_list = []
@@ -111,6 +118,7 @@ if __name__ == "__main__":
 
     best_test_acc = 0
     best_test_acc_epoch = 0
+    best_loss =0
 
     model_best = None
     for epoch in range(num_epochs):
@@ -140,11 +148,13 @@ if __name__ == "__main__":
             
             test_loss_list.append(test_loss)
             test_acc_list.append(test_accuracy * 100)
-            if test_accuracy > best_test_acc:
+            if test_accuracy > best_test_acc or (test_accuracy == best_test_acc and test_loss < best_loss):
                 best_test_acc = test_accuracy
+                best_loss = test_loss
                 best_test_acc_epoch = epoch
                 model_best = model
                 torch.save(model, "RNN_model.pth")
+                
                 
 
         if (epoch + 1) % 1 == 0:

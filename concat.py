@@ -54,16 +54,28 @@ def ConcatenateFiles_Multiple():
     return
 
 # Concatenate the individual training data files into one training data file
-def ConcatenateFiles_All():
-    data = []
-    for root, dirs, files in os.walk(f"{TRAINING_DATA_PATH}/"):
-        for file in files:
+def ConcatenateFiles_Multiple():
+    for basefile in training_files:
+        data = []
+        for file in training_files[basefile]:
+            print(file)
             df = pd.read_csv(f"{TRAINING_DATA_PATH}/{file}")
-            df = AlignFile(df)
+
+            # Check if it's a static sign (no '_dy' in filename)
+            if "_dy" not in file:
+                # Pad the static sign by repeating each row SEQUENCE_LENGTH times
+                padded_rows = []
+                for _, row in df.iterrows():
+                    repeated = pd.DataFrame([row.values] * SEQUENCE_LENGTH, columns=df.columns)
+                    padded_rows.append(repeated)
+                df = pd.concat(padded_rows, ignore_index=True)
+            else:
+                # Align dynamic signs to SEQUENCE_LENGTH
+                df = AlignFile(df)
+
             data.append(df)
-    new_data = pd.concat(data)
-    new_data.to_csv(f"database.csv", index=False)
-    return
+        new_Data = pd.concat(data)
+        new_Data.to_csv(f"{CONCATENATED_DATA_PATH}/{basefile}.csv", index=False)
 
 if GROUPING_MODE == 1:
     GetFiles()

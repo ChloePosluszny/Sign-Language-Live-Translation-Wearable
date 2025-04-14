@@ -13,7 +13,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-trainer_names = {'ALFONSO': 'a', 'CHLOE': 'c3', 'DAVID': 'd', 'ERIK': 'e', 'RAHMAN': 'r'}
+trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd1', 'ERIK': 'e', 'RAHMAN': 'r'}
 
 # -------------------------------
 # Global Mode Flags (toggle as needed)
@@ -46,7 +46,7 @@ scaler = None
 label_encoder  = None
 seq_len = 20
 WORD = ''
-all_labels = None
+
 # Predefined sensor names (modify as needed for your setup)
 SENSOR_NAMES_SINGLE = ["hall_1", "hall_2", "hall_3", "flex_t", "flex_i", "flex_m", "flex_r", "flex_p", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z"]
 SENSOR_NAMES_DOUBLE = SENSOR_NAMES_SINGLE + [name + "_R" for name in SENSOR_NAMES_SINGLE]
@@ -64,7 +64,7 @@ def load_model():
         model = torch.load(MODEL_PATH, weights_only=False)
         model.eval()
         label_encoder = joblib.load("label_encoder.pkl")
-        all_labels = label_encoder.classes_
+        scaler = joblib.load("scaler.pkl")
   
 
         # model = joblib.load(MODEL_PATH)
@@ -95,7 +95,8 @@ def translate_data():
         
         #poll data should be a list of lists of sequence length data entries
        
-        tensor_input = torch.tensor(RNN_buffer, dtype=torch.float32).unsqueeze(0)
+        normalized_buffer = scaler.transform(RNN_buffer)
+        tensor_input = torch.tensor(normalized_buffer, dtype=torch.float32).unsqueeze(0)
         if tensor_input.size(-1) != 14:
             print(f"Expected 14 features, but got {tensor_input.size(-1)}")
             return "Invalid input shape"
@@ -103,13 +104,18 @@ def translate_data():
         
         with torch.no_grad():
             outputs = model(tensor_input)
-            probs = torch.softmax(outputs, dim=1)  
-            max_prob, predicted = torch.max(probs, dim=1)  
+            probs = torch.softmax(outputs, dim=1)
+            max_prob, predicted = torch.max(probs, dim=1)
 
-            
-            label_prob_pairs = list(zip(all_labels, probs[0]))
-            # Sort by probability in descending order
+            all_labels = label_encoder.classes_
+            prob_values = probs[0]
+
+            label_prob_pairs = []
+            for i in range(len(all_labels)):
+                label_prob_pairs.append((all_labels[i], prob_values[i]))
+
             sorted_pairs = sorted(label_prob_pairs, key=lambda x: x[1], reverse=True)
+
             print("Labels and Probabilities:\n")
             for label, prob in sorted_pairs:
                 print(f"Label: {label}, Probability: {prob.item() * 100:.2f}%")
@@ -117,7 +123,7 @@ def translate_data():
             predicted_label = label_encoder.inverse_transform(predicted)
             # print(f"\nOutput: {predicted_label[0]} with confidence {max_prob.item() * 100:.2f}") 
             print(f"\n\033[32mOutput: {predicted_label[0]} with confidence {max_prob.item() * 100:.2f}%\033[0m")
-            WORD += predicted_label[0]
+            # WORD += str(predicted_label[0])
 
 
         
@@ -167,7 +173,7 @@ def process_poll(poll_data):
         if len(data) != 14:
             print(f"Skipping bad data: expected 14, got {len(data)} → {data}")
             return False
-        print_sensor_data_rnn(data)
+        # print_sensor_data_rnn(data)
         RNN_buffer.append(poll_data[0])
         if(len(RNN_buffer) == seq_len):
             translate_data()
@@ -213,7 +219,7 @@ def read_serial_data():
             buffer = ''
             if TRAINING_MODE:
                 for i in range(iterations):
-                    input(f"Press ENTER when ready to sign {CSV_TITLE} Current iteration: {i}")
+                    input(f"Press ENTER when ready to sign {CSV_TITLE} Current iteration: {i +1}")
                     ser.reset_input_buffer()  # Flush old data
                     poll_data = []
                     samples_collected = 0
@@ -240,14 +246,14 @@ def read_serial_data():
                 while (1):
                     expected_arrays = 2 if GLOVE_MODE == "DOUBLE" else 1 
                      
-                    user_in = input(f"Press ENTER when ready ")
-                    if user_in == "p":
-                        print(f"\033[35m{WORD}\033[0m")
-                        continue
-                    if user_in == "d":
-                        WORD = WORD[:-1]
-                        print(f"\033[35m{WORD}\033[0m")
-                        continue
+                    # user_in = input(f"Press ENTER when ready ")
+                    # if user_in == "p":
+                    #     print(f"\033[35m{WORD}\033[0m")
+                    #     continue
+                    # if user_in == "d":
+                    #     WORD = WORD[:-1]
+                    #     print(f"\033[35m{WORD}\033[0m")
+                    #     continue
                     ser.reset_input_buffer()  # Flush old data
                     poll_data = []
                     samples_collected = 0
@@ -290,7 +296,7 @@ def get_user_input():
     if CSV_SUBTITLE == '':
         CSV_SUBTITLE = trainer_names[TRAINER_NAME]
     
-    CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}.csv"
+    CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}_dy.csv"
     print(CSV_SUBTITLE)
     return
 

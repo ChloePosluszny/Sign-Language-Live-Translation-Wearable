@@ -13,13 +13,13 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-trainer_names = {'ALFONSO': 'a', 'CHLOE': 'c3', 'DAVID': 'd', 'ERIK': 'e', 'RAHMAN': 'r'}
+trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd1', 'ERIK': 'e', 'RAHMAN': 'r'}
 
 # -------------------------------
 # Global Mode Flags (toggle as needed)
 # -------------------------------
-TRAINING_MODE = False        # True: training (write to CSV), False: output (ML inference)
-TRAINER_NAME = 'CHLOE'
+TRAINING_MODE = True        # True: training (write to CSV), False: output (ML inference)
+TRAINER_NAME = 'ALFONSO'
 COMM_MODE = "SERIAL"         # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"        # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
 
@@ -38,7 +38,7 @@ BAUD_RATE = 115200           # Must match the ESP32's baud rate
 # -------------------------------
 CSV_FILE_PATH = None  # Will be set based on user input if TRAINING_MODE is True
 CSV_TITLE = None      # Global title for the CSV
-TRAINING_TIME = 60
+TRAINING_TIME = 12
 MODEL_PATH = "RNN_model.pth" # Paths: RNN_model.pth, mlp_translation_model.pkl
 model = None
 scaler = None
@@ -158,6 +158,9 @@ def process_poll(poll_data):
         else:  # SINGLE mode
             combined_data = poll_data[0]
         
+        if len(combined_data) != 14:
+            print("skiping")
+            return
         print_to_csv(CSV_FILE_PATH, combined_data)
 
     else:
@@ -252,8 +255,8 @@ def get_user_input():
     global TRAINING_TIME
     global CSV_TITLE
     global CSV_SUBTITLE
-    CSV_TITLE = input("Enter CSV title: ")
-    CSV_SUBTITLE = input("Enter CSV subtitle: ")
+    CSV_TITLE = input("Enter CSV title (Sign): ")
+    CSV_SUBTITLE = input("Enter CSV subtitle (trainer): ")
     timer = input("Enter training time (in seconds):")
     if CSV_SUBTITLE == '':
         CSV_SUBTITLE = trainer_names[TRAINER_NAME]
