@@ -234,6 +234,9 @@ def read_serial_data():
                         if line:
                             data_array = parse_line_to_array(line)
                             if data_array:
+                                # TODO: verify
+                                if len(data_array) != 14:
+                                    print("Warning: unexpected sensor data")
                                 poll_data.append(data_array)
                                 # Once we've collected the expected arrays, process the poll.
                                 if len(poll_data) == expected_arrays:
