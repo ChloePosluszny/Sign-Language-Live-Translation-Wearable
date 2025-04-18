@@ -22,7 +22,7 @@ TRAINING_MODE = True        # True: training (write to CSV), False: output (ML i
 TRAINER_NAME = 'DAVID'
 COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
-
+HAND = "l"
 # -------------------------------
 # Communication Port Configuration
 # -------------------------------
@@ -40,12 +40,13 @@ CSV_FILE_PATH = None  # Will be set based on user input if TRAINING_MODE is True
 CSV_TITLE = None      # Global title for the CSV
 CSV_SUBTITLE = None
 iterations = 100
-MODEL_PATH = "RNN_model.pth"
+MODEL_PATH = f"RNN_model_{HAND}.pth"
 model = None
 scaler = None
 label_encoder  = None
 seq_len = 20
 WORD = ''
+feature_length = 15
 
 # Predefined sensor names (modify as needed for your setup)
 HEADER = ["hall_1", "hall_2", "hall_3", "flex_t", "flex_i", "flex_m", "flex_r", "flex_p", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z", "hand", "sign"]
@@ -62,13 +63,13 @@ def load_model():
     try:
         model = torch.load(MODEL_PATH, weights_only=False)
         model.eval()
-        label_encoder = joblib.load("label_encoder.pkl")
-        scaler = joblib.load("scaler.pkl")
+        label_encoder = joblib.load(f"label_encoder_{HAND}.pkl")
+        scaler = joblib.load(f"scaler{HAND}.pkl")
   
 
         # model = joblib.load(MODEL_PATH)
         # scaler = joblib.load("scaler.pkl")
-        print("Model loaded successfully.")
+        print(f"{MODEL_PATH} loaded successfully.")
     except Exception as e:
         print(f"Error loading model: {e}")
 
@@ -96,7 +97,7 @@ def translate_data():
        
         normalized_buffer = scaler.transform(RNN_buffer)
         tensor_input = torch.tensor(normalized_buffer, dtype=torch.float32).unsqueeze(0)
-        if tensor_input.size(-1) != 15:
+        if tensor_input.size(-1) != feature_length:
             print(f"Expected 15 features, but got {tensor_input.size(-1)}")
             return "Invalid input shape"
 
@@ -163,7 +164,7 @@ def process_poll(poll_data):
                 print("Data written to CSV.")
     else:
         data = poll_data[0]
-        if len(data) != 15:
+        if len(data) != feature_length:
             print(f"Skipping bad data: expected 15, got {len(data)} → {data}")
             return False
         # print_sensor_data_rnn(data)
@@ -187,7 +188,7 @@ def parse_line_to_array(line):
         A list of floats if conversion is successful; otherwise, an empty list.
     """
     try:
-        return [float(x) for x in line.split(',')[:-1] if x.strip() != '']
+        return [float(x) for x in line.split(',') if x.strip() != '']
     except ValueError:
         print("Error parsing line:", line)
         return []
@@ -288,7 +289,7 @@ def get_user_input():
     if CSV_SUBTITLE == '':
         CSV_SUBTITLE = trainer_names[TRAINER_NAME]
     
-    CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}_l.csv"
+    CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}_{HAND}.csv"
     print(CSV_SUBTITLE)
     return
 

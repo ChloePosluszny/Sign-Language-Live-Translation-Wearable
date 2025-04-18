@@ -98,10 +98,10 @@ void loop() {
   myPrint(String(g.gyro.z));
   myPrint(", ");
   #ifdef LEFT_GLOVE
-    myPrint("l");
+    myPrint("0");
   #endif
   #ifdef RIGHT_GLOVE
-    myPrint("r");
+    myPrint("1");
   #endif
   myPrintln();
 
