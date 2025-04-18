@@ -22,6 +22,7 @@ TRAINING_MODE = True        # True: training (write to CSV), False: output (ML i
 TRAINER_NAME = 'ALFONSO'
 COMM_MODE = "SERIAL"         # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"        # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
+HAND = "R"
 
 # -------------------------------
 # Communication Port Configuration
@@ -43,10 +44,11 @@ MODEL_PATH = "RNN_model.pth" # Paths: RNN_model.pth, mlp_translation_model.pkl
 model = None
 scaler = None
 label_encoder  = None
+feature_length = 15
+
 
 # Predefined sensor names (modify as needed for your setup)
-SENSOR_NAMES_SINGLE = ["hall_1", "hall_2", "hall_3", "flex_t", "flex_i", "flex_m", "flex_r", "flex_p", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z"]
-SENSOR_NAMES_DOUBLE = SENSOR_NAMES_SINGLE + [name + "_R" for name in SENSOR_NAMES_SINGLE]
+HEADER = ["hall_1", "hall_2", "hall_3", "flex_t", "flex_i", "flex_m", "flex_r", "flex_p", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z", "hand", "sign"]
 
 def load_model():
     """
@@ -96,8 +98,8 @@ def translate_data(poll_data):
             #THIS IS RNN
             #poll data should be a list of lists of sequence length data entries
             tensor_input = torch.tensor(poll_data, dtype=torch.float32).unsqueeze(0)
-            if tensor_input.size(-1) != 14:
-                print(f"Expected 14 features, but got {tensor_input.size(-1)}")
+            if tensor_input.size(-1) != feature_length:
+                print(f"Expected f{feature_length} features, but got {tensor_input.size(-1)}")
                 return "Invalid input shape"
 
             with torch.no_grad():
@@ -126,12 +128,7 @@ def print_to_csv(file_path: str, combined_data: list):
     with open(file_path, mode='a', newline='') as csv_file:
         writer = csv.writer(csv_file)
         if not file_exists:
-            if GLOVE_MODE == "DOUBLE":
-                header = SENSOR_NAMES_DOUBLE[:len(combined_data)]
-            else:
-                header = SENSOR_NAMES_SINGLE[:len(combined_data)]
-            header.append('sign')  # Append the title at the end of the header
-            writer.writerow(header)
+            writer.writerow(HEADER)
         # Append the title to the row and write it
         writer.writerow(combined_data + [CSV_TITLE])
     print("Data written to CSV.")
@@ -158,7 +155,7 @@ def process_poll(poll_data):
         else:  # SINGLE mode
             combined_data = poll_data[0]
         
-        if len(combined_data) != 14:
+        if len(combined_data) != feature_length:
             print("skiping")
             return
         print_to_csv(CSV_FILE_PATH, combined_data)
@@ -176,7 +173,7 @@ def process_poll(poll_data):
         #     old_letter = output
             # print("probs", proba)
         data = poll_data[0]
-        if len(data) != 14:
+        if len(data) != feature_length:
             #print(f"Skipping bad data: expected 14, got {len(data)} → {data}")
             print_to_csv("error.csv", data)
             return
@@ -235,7 +232,7 @@ def read_serial_data():
                             data_array = parse_line_to_array(line)
                             if data_array:
                                 # TODO: verify
-                                if len(data_array) != 14:
+                                if len(data_array) != feature_length:
                                     print("Warning: unexpected sensor data")
                                 poll_data.append(data_array)
                                 # Once we've collected the expected arrays, process the poll.
@@ -259,13 +256,14 @@ def get_user_input():
     global CSV_TITLE
     global CSV_SUBTITLE
     CSV_TITLE = input("Enter CSV title (Sign): ")
-    CSV_SUBTITLE = input("Enter CSV subtitle (trainer): ")
-    timer = input("Enter training time (in seconds):")
-    if CSV_SUBTITLE == '':
-        CSV_SUBTITLE = trainer_names[TRAINER_NAME]
-    if timer != '':
-        TRAINING_TIME = int(timer)
-    CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}.csv"
+    # CSV_SUBTITLE = input("Enter CSV subtitle (trainer): ")
+    # timer = input("Enter training time (in seconds):")
+    # if CSV_SUBTITLE == '':
+    #     CSV_SUBTITLE = trainer_names[TRAINER_NAME]
+    CSV_SUBTITLE = trainer_names[TRAINER_NAME]
+    # if timer != '':
+    #     TRAINING_TIME = int(timer)
+    CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}_{HAND}.csv"
     return
 
 if __name__ == "__main__":

@@ -19,10 +19,10 @@ trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd1', 'ERIK': 'e', 'RA
 # Global Mode Flags (toggle as needed)
 # -------------------------------
 TRAINING_MODE = True        # True: training (write to CSV), False: output (ML inference)
-TRAINER_NAME = 'ALFONSO'
+TRAINER_NAME = 'RAHMAN'
 COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
-HAND = "L"
+HAND = "R"
 # -------------------------------
 # Communication Port Configuration
 # -------------------------------
@@ -148,13 +148,16 @@ def process_poll(poll_data):
         else:  # SINGLE mode
             combined_data = poll_data[0]
         
+        if len(combined_data) != feature_length:
+            print("skiping")
+            return False
         RNN_buffer.append(combined_data)
         # Write to CSV with the CSV_TITLE appended.
         file_exists = os.path.isfile(CSV_FILE_PATH)
         with open(CSV_FILE_PATH, mode='a', newline='') as csv_file:
             writer = csv.writer(csv_file)
             if not file_exists:
-                header = HEADER[:len(combined_data)+1]
+                header = HEADER[:len(combined_data) +1]
                 writer.writerow(header)
             # Append the title to the row and write it
             if len(RNN_buffer) == seq_len:
@@ -162,6 +165,7 @@ def process_poll(poll_data):
                     writer.writerow(RNN_buffer[i] + [CSV_TITLE])
                 RNN_buffer = []
                 print("Data written to CSV.")
+            return True
     else:
         data = poll_data[0]
         nbr_gloves = 0
@@ -233,12 +237,12 @@ def read_serial_data():
                                 buffer = buffer[line_end + 1:]
 
                                 data_array = parse_line_to_array(line)
-                                if data_array:
+                                if data_array: #maybe do error checking here
                                     poll_data.append(data_array)
                                     if len(poll_data) == expected_arrays:
-                                        process_poll(poll_data)
+                                        if process_poll(poll_data):
+                                            samples_collected += 1
                                         poll_data.clear()
-                                        samples_collected += 1
                     else:
                         time.sleep(0.01)
             else: #testing
@@ -291,10 +295,11 @@ def get_user_input():
     
     CSV_TITLE = input("Enter CSV title (Sign): ")
     
-    if CSV_SUBTITLE == '':
-        CSV_SUBTITLE = trainer_names[TRAINER_NAME]
+    # if CSV_SUBTITLE == '':
+    #     CSV_SUBTITLE = trainer_names[TRAINER_NAME]
+    CSV_SUBTITLE = trainer_names[TRAINER_NAME]
     
-    CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}_{HAND}.csv"
+    CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}_{HAND}_dy.csv"
     print(CSV_SUBTITLE)
     return
 
@@ -305,7 +310,7 @@ def main():
     if TRAINING_MODE:
         global CSV_SUBTITLE
         global iterations
-        CSV_SUBTITLE = input("Enter CSV subtitle (trainer): ")
+        # CSV_SUBTITLE = input("Enter CSV subtitle (trainer): ")
         iterations = int(input("Enter number of data points to be signed: "))
         while True: 
             get_user_input()
