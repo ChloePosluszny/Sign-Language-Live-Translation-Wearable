@@ -42,7 +42,7 @@ class RNN(nn.Module):
 
 
 if __name__ == "__main__":
-    HAND = "L"
+    HAND = "R"
     # Load Data
     # dfc3 = pd.read_csv("concatenated_data/c3.csv")
     # dfj = pd.read_csv("training_data/j_d_dy.csv")
@@ -50,11 +50,11 @@ if __name__ == "__main__":
     # dfty = pd.read_csv("training_data/thank-you_d_dy.csv")
     # dfch = pd.read_csv("concatenated_data/c.csv")
     # dfch2 = pd.read_csv("concatenated_data/c2.csv")
-    d1 = pd.read_csv("concatenated_data/a1.csv")
-    a1 = pd.read_csv("concatenated_data/d1.csv")
+    dr = pd.read_csv("concatenated_data/r.csv")
+    # a1 = pd.read_csv("concatenated_data/d1.csv")
 
     data = pd.concat([
-    d1,a1
+    dr
 ], ignore_index=True)
     
     X = data.drop(['sign'], axis='columns').values 
@@ -163,7 +163,7 @@ if __name__ == "__main__":
 
 
 
-    model_best = torch.load("RNN_model_{HAND}.pth", weights_only=False)
+    model_best = torch.load(f"RNN_model_{HAND}.pth", weights_only=False)
 
     model_best.eval()
     with torch.no_grad():

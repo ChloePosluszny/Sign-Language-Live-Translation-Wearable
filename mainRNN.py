@@ -18,7 +18,7 @@ trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd1', 'ERIK': 'e', 'RA
 # -------------------------------
 # Global Mode Flags (toggle as needed)
 # -------------------------------
-TRAINING_MODE = True        # True: training (write to CSV), False: output (ML inference)
+TRAINING_MODE = False        # True: training (write to CSV), False: output (ML inference)
 TRAINER_NAME = 'RAHMAN'
 COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
@@ -64,7 +64,7 @@ def load_model():
         model = torch.load(MODEL_PATH, weights_only=False)
         model.eval()
         label_encoder = joblib.load(f"label_encoder_{HAND}.pkl")
-        scaler = joblib.load(f"scaler{HAND}.pkl")
+        scaler = joblib.load(f"scaler_{HAND}.pkl")
   
 
         # model = joblib.load(MODEL_PATH)

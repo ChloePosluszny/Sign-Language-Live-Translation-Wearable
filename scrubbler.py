@@ -53,5 +53,5 @@ def scrub_folder(folder_path):
     for filepath in glob.glob(os.path.join(folder_path, '*.csv')):
         scrub_csv(filepath)
 
-# scrub_csv('training_data/d_d1_l.csv')
+# scrub_csv('training_data/w_r_R_dy.csv')
 scrub_folder('training_data')
