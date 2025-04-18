@@ -1,8 +1,8 @@
 #define MAX_PACKET_SIZE 64
 #define NUM_HALL 3
 #define NUM_FLEX 5
-#define LEFT_GLOVE
-//#define RIGHT_GLOVE
+//#define LEFT_GLOVE
+#define RIGHT_GLOVE
 #define DELAY 50
 
 #include <Adafruit_MPU6050.h>

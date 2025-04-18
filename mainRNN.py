@@ -154,7 +154,7 @@ def process_poll(poll_data):
         with open(CSV_FILE_PATH, mode='a', newline='') as csv_file:
             writer = csv.writer(csv_file)
             if not file_exists:
-                header = HEADER[:len(combined_data) +1]
+                header = HEADER[:len(combined_data)+1]
                 writer.writerow(header)
             # Append the title to the row and write it
             if len(RNN_buffer) == seq_len:
