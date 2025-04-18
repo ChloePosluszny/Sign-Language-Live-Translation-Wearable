@@ -164,8 +164,13 @@ def process_poll(poll_data):
                 print("Data written to CSV.")
     else:
         data = poll_data[0]
-        if len(data) != feature_length:
-            print(f"Skipping bad data: expected 15, got {len(data)} → {data}")
+        nbr_gloves = 0
+        if GLOVE_MODE == "DOUBLE":
+            nbr_gloves = 2
+        elif GLOVE_MODE == "SINGLE":
+            nbr_gloves = 1
+        if len(data) != nbr_gloves * feature_length:
+            print(f"Skipping bad data: expected {nbr_gloves * feature_length}, got {len(data)} → {data}")
             return False
         # print_sensor_data_rnn(data)
         RNN_buffer.append(poll_data[0])
