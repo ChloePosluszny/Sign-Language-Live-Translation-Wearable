@@ -19,10 +19,10 @@ trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd1', 'ERIK': 'e', 'RA
 # Global Mode Flags (toggle as needed)
 # -------------------------------
 TRAINING_MODE = True        # True: training (write to CSV), False: output (ML inference)
-TRAINER_NAME = 'DAVID'
+TRAINER_NAME = 'ALFONSO'
 COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
-HAND = "l"
+HAND = "L"
 # -------------------------------
 # Communication Port Configuration
 # -------------------------------
@@ -154,7 +154,7 @@ def process_poll(poll_data):
         with open(CSV_FILE_PATH, mode='a', newline='') as csv_file:
             writer = csv.writer(csv_file)
             if not file_exists:
-                header = HEADER[:len(combined_data)]
+                header = HEADER[:len(combined_data) +1]
                 writer.writerow(header)
             # Append the title to the row and write it
             if len(RNN_buffer) == seq_len:

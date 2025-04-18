@@ -42,6 +42,7 @@ class RNN(nn.Module):
 
 
 if __name__ == "__main__":
+    HAND = "L"
     # Load Data
     # dfc3 = pd.read_csv("concatenated_data/c3.csv")
     # dfj = pd.read_csv("training_data/j_d_dy.csv")
@@ -62,11 +63,11 @@ if __name__ == "__main__":
 
     scaler = StandardScaler()
     X = scaler.fit_transform(X)
-    joblib.dump(scaler, "scaler.pkl")
+    joblib.dump(scaler, f"scaler_{HAND}.pkl")
 
     label_encoder = LabelEncoder()
     y = label_encoder.fit_transform(y)  # Encode labels as integers
-    joblib.dump(label_encoder, "label_encoder.pkl")
+    joblib.dump(label_encoder, f"label_encoder_{HAND}.pkl")
 
     #will be constant depending on what why decide and how many signs there are
     input_size = X.shape[1]  # Number of features
@@ -153,7 +154,7 @@ if __name__ == "__main__":
                 best_loss = test_loss
                 best_test_acc_epoch = epoch
                 model_best = model
-                torch.save(model, "RNN_model.pth")
+                torch.save(model, f"RNN_model_{HAND}.pth")
                 
                 
 
@@ -162,7 +163,7 @@ if __name__ == "__main__":
 
 
 
-    model_best = torch.load("RNN_model.pth", weights_only=False)
+    model_best = torch.load("RNN_model_{HAND}.pth", weights_only=False)
 
     model_best.eval()
     with torch.no_grad():
