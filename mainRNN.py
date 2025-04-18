@@ -18,7 +18,7 @@ trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd1', 'ERIK': 'e', 'RA
 # -------------------------------
 # Global Mode Flags (toggle as needed)
 # -------------------------------
-TRAINING_MODE = False        # True: training (write to CSV), False: output (ML inference)
+TRAINING_MODE = True        # True: training (write to CSV), False: output (ML inference)
 TRAINER_NAME = 'DAVID'
 COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
@@ -48,8 +48,7 @@ seq_len = 20
 WORD = ''
 
 # Predefined sensor names (modify as needed for your setup)
-SENSOR_NAMES_SINGLE = ["hall_1", "hall_2", "hall_3", "flex_t", "flex_i", "flex_m", "flex_r", "flex_p", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z"]
-SENSOR_NAMES_DOUBLE = SENSOR_NAMES_SINGLE + [name + "_R" for name in SENSOR_NAMES_SINGLE]
+HEADER = ["hall_1", "hall_2", "hall_3", "flex_t", "flex_i", "flex_m", "flex_r", "flex_p", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z", "hand", "sign"]
 
 def load_model():
     """
@@ -97,8 +96,8 @@ def translate_data():
        
         normalized_buffer = scaler.transform(RNN_buffer)
         tensor_input = torch.tensor(normalized_buffer, dtype=torch.float32).unsqueeze(0)
-        if tensor_input.size(-1) != 14:
-            print(f"Expected 14 features, but got {tensor_input.size(-1)}")
+        if tensor_input.size(-1) != 15:
+            print(f"Expected 15 features, but got {tensor_input.size(-1)}")
             return "Invalid input shape"
 
         
@@ -127,8 +126,6 @@ def translate_data():
 
 
         
-           
-        
 
 translations = []
 def process_poll(poll_data):
@@ -156,11 +153,7 @@ def process_poll(poll_data):
         with open(CSV_FILE_PATH, mode='a', newline='') as csv_file:
             writer = csv.writer(csv_file)
             if not file_exists:
-                if GLOVE_MODE == "DOUBLE":
-                    header = SENSOR_NAMES_DOUBLE[:len(combined_data)]
-                else:
-                    header = SENSOR_NAMES_SINGLE[:len(combined_data)]
-                header.append('sign')  # Append the title at the end of the header
+                header = HEADER[:len(combined_data)]
                 writer.writerow(header)
             # Append the title to the row and write it
             if len(RNN_buffer) == seq_len:
@@ -170,8 +163,8 @@ def process_poll(poll_data):
                 print("Data written to CSV.")
     else:
         data = poll_data[0]
-        if len(data) != 14:
-            print(f"Skipping bad data: expected 14, got {len(data)} → {data}")
+        if len(data) != 15:
+            print(f"Skipping bad data: expected 15, got {len(data)} → {data}")
             return False
         # print_sensor_data_rnn(data)
         RNN_buffer.append(poll_data[0])
@@ -194,7 +187,7 @@ def parse_line_to_array(line):
         A list of floats if conversion is successful; otherwise, an empty list.
     """
     try:
-        return [float(x) for x in line.split(',') if x.strip() != '']
+        return [float(x) for x in line.split(',')[:-1] if x.strip() != '']
     except ValueError:
         print("Error parsing line:", line)
         return []
@@ -289,14 +282,13 @@ def get_user_input():
     global CSV_FILE_PATH
     global CSV_SUBTITLE
     global CSV_TITLE
-
     
     CSV_TITLE = input("Enter CSV title (Sign): ")
     
     if CSV_SUBTITLE == '':
         CSV_SUBTITLE = trainer_names[TRAINER_NAME]
     
-    CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}_dy.csv"
+    CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}_l.csv"
     print(CSV_SUBTITLE)
     return
 
