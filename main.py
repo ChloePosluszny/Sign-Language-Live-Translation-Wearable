@@ -19,7 +19,7 @@ trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd1', 'ERIK': 'e', 'RA
 # Global Mode Flags (toggle as needed)
 # -------------------------------
 TRAINING_MODE = True        # True: training (write to CSV), False: output (ML inference)
-TRAINER_NAME = 'ALFONSO'
+TRAINER_NAME = 'RAHMAN'
 COMM_MODE = "SERIAL"         # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"        # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
 HAND = "R"

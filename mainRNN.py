@@ -149,7 +149,7 @@ def process_poll(poll_data):
             combined_data = poll_data[0]
         
         if len(combined_data) != feature_length:
-            print("skiping")
+            print("skipping")
             return False
         RNN_buffer.append(combined_data)
         # Write to CSV with the CSV_TITLE appended.
