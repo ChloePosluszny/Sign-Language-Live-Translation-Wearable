@@ -3,7 +3,7 @@
 #define NUM_FLEX 5
 //#define LEFT_GLOVE
 #define RIGHT_GLOVE
-#define DELAY 50
+#define DELAY 100
 
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>

@@ -13,16 +13,18 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd1', 'ERIK': 'e', 'RAHMAN': 'r'}
+trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd', 'ERIK': 'e', 'RAHMAN': 'r'}
 
 # -------------------------------
 # Global Mode Flags (toggle as needed)
 # -------------------------------
+
 TRAINING_MODE = False        # True: training (write to CSV), False: output (ML inference)
 TRAINER_NAME = 'RAHMAN'
+
 COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
-HAND = "L"
+HAND = "R"
 # -------------------------------
 # Communication Port Configuration
 # -------------------------------
@@ -72,8 +74,6 @@ def load_model():
         print(f"{MODEL_PATH} loaded successfully.")
     except Exception as e:
         print(f"Error loading model: {e}")
-
-
     
 RNN_buffer = []
 def translate_data():
@@ -125,8 +125,6 @@ def translate_data():
             print(f"\n\033[32mOutput: {predicted_label[0]} with confidence {max_prob.item() * 100:.2f}%\033[0m")
             # WORD += str(predicted_label[0])
 
-
-        
 
 translations = []
 def process_poll(poll_data):
@@ -183,8 +181,6 @@ def process_poll(poll_data):
             # print("Output: ", output)
             RNN_buffer = []
         return True
-    
-    
         
 def parse_line_to_array(line):
     """
