@@ -50,11 +50,11 @@ if __name__ == "__main__":
     # dfty = pd.read_csv("training_data/thank-you_d_dy.csv")
     # dfch = pd.read_csv("concatenated_data/c.csv")
     # dfch2 = pd.read_csv("concatenated_data/c2.csv")
-    # dr = pd.read_csv("concatenated_data/r.csv")
-    a1 = pd.read_csv("concatenated_data/a1.csv")
+    dr = pd.read_csv("concatenated_data/r.csv")
+    # a1 = pd.read_csv("concatenated_data/a1.csv")
 
     data = pd.concat([
-    a1
+    dr
 ], ignore_index=True)
     
     X = data.drop(['sign'], axis='columns').values 

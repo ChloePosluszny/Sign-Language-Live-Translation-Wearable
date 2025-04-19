@@ -33,13 +33,16 @@ def AlignFile(df):
 def GetFiles():
     for root, dirs, files in os.walk(f"{TRAINING_DATA_PATH}/"):
         for file in files:
-            file_split = file.split("_")[SPLIT_GROUPING]
-            if "." in file_split:
-                file_split = file_split.split(".")[0]
-            if file_split not in training_files:
-                training_files[file_split] = []
-            training_files[file_split].append(file)
-    return
+            # Expecting format like 'sign_trainer_glove.csv'
+            parts = file.split("_")
+        
+            trainer = parts[1]
+            glove = parts[2].split(".")[0]  # Remove ".csv"
+            group_key = f"{trainer}_{glove.lower()}"  # e.g., "r_L"
+            if group_key not in training_files:
+                training_files[group_key] = []
+            training_files[group_key].append(file)
+            
 
 # Concatenate the individual training data files into concatenated training data files
 def ConcatenateFiles_Multiple():
