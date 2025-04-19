@@ -24,7 +24,7 @@ TRAINER_NAME = 'RAHMAN'
 
 COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
-HAND = "R"
+HAND = "L"
 # -------------------------------
 # Communication Port Configuration
 # -------------------------------

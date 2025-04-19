@@ -44,14 +44,9 @@ class RNN(nn.Module):
 if __name__ == "__main__":
     HAND = "L"
     # Load Data
-    # dfc3 = pd.read_csv("concatenated_data/c3.csv")
-    # dfj = pd.read_csv("training_data/j_d_dy.csv")
-    # dfz = pd.read_csv("training_data/z_d_dy.csv")
-    # dfty = pd.read_csv("training_data/thank-you_d_dy.csv")
-    # dfch = pd.read_csv("concatenated_data/c.csv")
-    # dfch2 = pd.read_csv("concatenated_data/c2.csv")
-    dr = pd.read_csv("concatenated_data/r.csv")
-    # a1 = pd.read_csv("concatenated_data/a1.csv")
+
+    dr = pd.read_csv(f"concatenated_data/r_{HAND}.csv")
+   
 
     data = pd.concat([
     dr

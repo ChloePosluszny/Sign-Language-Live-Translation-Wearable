@@ -13,13 +13,13 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd', 'ERIK': 'e', 'RAHMAN': 'r'}
+trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd1', 'ERIK': 'e', 'RAHMAN': 'r'}
 
 # -------------------------------
 # Global Mode Flags (toggle as needed)
 # -------------------------------
 TRAINING_MODE = True        # True: training (write to CSV), False: output (ML inference)
-TRAINER_NAME = 'DAVID'
+TRAINER_NAME = 'RAHMAN'
 COMM_MODE = "SERIAL"         # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"        # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
 HAND = "L"
