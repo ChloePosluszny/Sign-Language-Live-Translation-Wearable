@@ -98,7 +98,6 @@ if __name__ == "__main__":
     y_test_t = torch.tensor(y_test, dtype=torch.long)
 
 
-
     model = RNN(input_size, hidden_size, num_layers, num_classes, dropout)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr, weight_decay=weight_decay) #adam is best i found
