@@ -13,16 +13,18 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd1', 'ERIK': 'e', 'RAHMAN': 'r'}
+trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd', 'ERIK': 'e', 'RAHMAN': 'r'}
 
 # -------------------------------
 # Global Mode Flags (toggle as needed)
 # -------------------------------
+
 TRAINING_MODE = False        # True: training (write to CSV), False: output (ML inference)
-TRAINER_NAME = 'DAVID'
+TRAINER_NAME = 'ERIK'
+
 COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
-
+HAND = "L"
 # -------------------------------
 # Communication Port Configuration
 # -------------------------------
@@ -40,16 +42,16 @@ CSV_FILE_PATH = None  # Will be set based on user input if TRAINING_MODE is True
 CSV_TITLE = None      # Global title for the CSV
 CSV_SUBTITLE = None
 iterations = 100
-MODEL_PATH = "RNN_model.pth"
+MODEL_PATH = f"RNN_model_{HAND}.pth"
 model = None
 scaler = None
 label_encoder  = None
 seq_len = 20
 WORD = ''
+feature_length = 15
 
 # Predefined sensor names (modify as needed for your setup)
-SENSOR_NAMES_SINGLE = ["hall_1", "hall_2", "hall_3", "flex_t", "flex_i", "flex_m", "flex_r", "flex_p", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z"]
-SENSOR_NAMES_DOUBLE = SENSOR_NAMES_SINGLE + [name + "_R" for name in SENSOR_NAMES_SINGLE]
+HEADER = ["hall_1", "hall_2", "hall_3", "flex_t", "flex_i", "flex_m", "flex_r", "flex_p", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z", "hand", "sign"]
 
 def load_model():
     """
@@ -63,17 +65,15 @@ def load_model():
     try:
         model = torch.load(MODEL_PATH, weights_only=False)
         model.eval()
-        label_encoder = joblib.load("label_encoder.pkl")
-        scaler = joblib.load("scaler.pkl")
+        label_encoder = joblib.load(f"label_encoder_{HAND}.pkl")
+        scaler = joblib.load(f"scaler_{HAND}.pkl")
   
 
         # model = joblib.load(MODEL_PATH)
         # scaler = joblib.load("scaler.pkl")
-        print("Model loaded successfully.")
+        print(f"{MODEL_PATH} loaded successfully.")
     except Exception as e:
         print(f"Error loading model: {e}")
-
-
     
 RNN_buffer = []
 def translate_data():
@@ -97,8 +97,8 @@ def translate_data():
        
         normalized_buffer = scaler.transform(RNN_buffer)
         tensor_input = torch.tensor(normalized_buffer, dtype=torch.float32).unsqueeze(0)
-        if tensor_input.size(-1) != 14:
-            print(f"Expected 14 features, but got {tensor_input.size(-1)}")
+        if tensor_input.size(-1) != feature_length:
+            print(f"Expected 15 features, but got {tensor_input.size(-1)}")
             return "Invalid input shape"
 
         
@@ -126,10 +126,6 @@ def translate_data():
             # WORD += str(predicted_label[0])
 
 
-        
-           
-        
-
 translations = []
 def process_poll(poll_data):
     """
@@ -150,17 +146,16 @@ def process_poll(poll_data):
         else:  # SINGLE mode
             combined_data = poll_data[0]
         
+        if len(combined_data) != feature_length:
+            print("skipping")
+            return False
         RNN_buffer.append(combined_data)
         # Write to CSV with the CSV_TITLE appended.
         file_exists = os.path.isfile(CSV_FILE_PATH)
         with open(CSV_FILE_PATH, mode='a', newline='') as csv_file:
             writer = csv.writer(csv_file)
             if not file_exists:
-                if GLOVE_MODE == "DOUBLE":
-                    header = SENSOR_NAMES_DOUBLE[:len(combined_data)]
-                else:
-                    header = SENSOR_NAMES_SINGLE[:len(combined_data)]
-                header.append('sign')  # Append the title at the end of the header
+                header = HEADER[:len(combined_data) +1]
                 writer.writerow(header)
             # Append the title to the row and write it
             if len(RNN_buffer) == seq_len:
@@ -168,10 +163,16 @@ def process_poll(poll_data):
                     writer.writerow(RNN_buffer[i] + [CSV_TITLE])
                 RNN_buffer = []
                 print("Data written to CSV.")
+            return True
     else:
         data = poll_data[0]
-        if len(data) != 14:
-            print(f"Skipping bad data: expected 14, got {len(data)} → {data}")
+        nbr_gloves = 0
+        if GLOVE_MODE == "DOUBLE":
+            nbr_gloves = 2
+        elif GLOVE_MODE == "SINGLE":
+            nbr_gloves = 1
+        if len(data) != nbr_gloves * feature_length:
+            print(f"Skipping bad data: expected {nbr_gloves * feature_length}, got {len(data)} → {data}")
             return False
         # print_sensor_data_rnn(data)
         RNN_buffer.append(poll_data[0])
@@ -180,8 +181,6 @@ def process_poll(poll_data):
             # print("Output: ", output)
             RNN_buffer = []
         return True
-    
-    
         
 def parse_line_to_array(line):
     """
@@ -234,12 +233,12 @@ def read_serial_data():
                                 buffer = buffer[line_end + 1:]
 
                                 data_array = parse_line_to_array(line)
-                                if data_array:
+                                if data_array: #maybe do error checking here
                                     poll_data.append(data_array)
                                     if len(poll_data) == expected_arrays:
-                                        process_poll(poll_data)
+                                        if process_poll(poll_data):
+                                            samples_collected += 1
                                         poll_data.clear()
-                                        samples_collected += 1
                     else:
                         time.sleep(0.01)
             else: #testing
@@ -289,14 +288,14 @@ def get_user_input():
     global CSV_FILE_PATH
     global CSV_SUBTITLE
     global CSV_TITLE
-
     
     CSV_TITLE = input("Enter CSV title (Sign): ")
     
-    if CSV_SUBTITLE == '':
-        CSV_SUBTITLE = trainer_names[TRAINER_NAME]
+    # if CSV_SUBTITLE == '':
+    #     CSV_SUBTITLE = trainer_names[TRAINER_NAME]
+    CSV_SUBTITLE = trainer_names[TRAINER_NAME]
     
-    CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}_dy.csv"
+    CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}_{HAND}_dy.csv"
     print(CSV_SUBTITLE)
     return
 
@@ -307,7 +306,7 @@ def main():
     if TRAINING_MODE:
         global CSV_SUBTITLE
         global iterations
-        CSV_SUBTITLE = input("Enter CSV subtitle (trainer): ")
+        # CSV_SUBTITLE = input("Enter CSV subtitle (trainer): ")
         iterations = int(input("Enter number of data points to be signed: "))
         while True: 
             get_user_input()
