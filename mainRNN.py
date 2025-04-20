@@ -18,7 +18,7 @@ warnings.filterwarnings('ignore')
 trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd1', 'ERIK': 'e', 'RAHMAN': 'r'}
 
 # Mode flags
-TRAINING_MODE = True        # True: training (write to CSV), False: output (ML inference)
+TRAINING_MODE = False        # True: training (write to CSV), False: output (ML inference)
 TRAINER_NAME = 'RAHMAN'
 
 COMM_MODE = "SERIAL"        # Options: "BLUETOOTH" or "SERIAL"
@@ -26,10 +26,8 @@ GLOVE_MODE = "DOUBLE"       # Options: "DOUBLE" (2 gloves) or "SINGLE"
 HAND = "R"
 
 # Serial ports
-BLUETOOTH_COM_PORT = 'COM5'
-SERIAL_COM_PORT = 'COM3'
-LEFT_COM = SERIAL_COM_PORT   # Left glove on serial USB
-RIGHT_COM = BLUETOOTH_COM_PORT  # Right glove on Bluetooth port
+LEFT_COM = 'COM3'   # Left glove on serial USB
+RIGHT_COM = 'COM5'  # Right glove on Bluetooth port
 
 BAUD_RATE = 115200
 
@@ -38,9 +36,11 @@ CSV_FILE_PATH = None
 CSV_TITLE = None
 CSV_SUBTITLE = None
 iterations = 100
-MODEL_PATH = f"RNN_model_{HAND}.pth"
-model = None
-scaler = None
+MODEL_PATH_LEFT = "RNN_model_L.pth"
+MODEL_PATH_RIGHT = "RNN_model_R.pth"
+MODEL_PATH_DOUBLE = "RNN_model_D.pth"
+mode_left = None
+scaler_left = None
 label_encoder = None
 seq_len = 20
 feature_length = 15
@@ -54,7 +54,7 @@ HEADER = [
     "hand", "sign"
 ]
 ACCEL_Y_IDX = HEADER.index("accel_y")
-ACCEL_Y_THRESHOLD = -10.0  # m/s^2 threshold to deactivate a glove
+ACCEL_Y_THRESHOLD = -9.0  # m/s^2 threshold to deactivate a glove
 
 # Queues for incoming data    
 data_q = queue.Queue()
@@ -184,7 +184,7 @@ def read_serial_data():
 
     else:
         # Single glove: use existing COM_PORT
-        COM_PORT = BLUETOOTH_COM_PORT if COMM_MODE=="BLUETOOTH" else SERIAL_COM_PORT
+        COM_PORT = LEFT_COM
         ser = serial.Serial(COM_PORT, BAUD_RATE, timeout=1)
         buf = ""
         while True:
