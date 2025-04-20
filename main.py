@@ -19,7 +19,7 @@ trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd1', 'ERIK': 'e', 'RA
 # Global Mode Flags (toggle as needed)
 # -------------------------------
 TRAINING_MODE = True        # True: training (write to CSV), False: output (ML inference)
-TRAINER_NAME = 'RAHMAN'
+TRAINER_NAME = 'ERIK'
 COMM_MODE = "SERIAL"         # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"        # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
 HAND = "L"
@@ -39,7 +39,7 @@ BAUD_RATE = 115200           # Must match the ESP32's baud rate
 # -------------------------------
 CSV_FILE_PATH = None  # Will be set based on user input if TRAINING_MODE is True
 CSV_TITLE = None      # Global title for the CSV
-TRAINING_TIME = 12
+TRAINING_TIME = 20
 MODEL_PATH = "RNN_model.pth" # Paths: RNN_model.pth, mlp_translation_model.pkl
 model = None
 scaler = None

@@ -45,7 +45,7 @@ if __name__ == "__main__":
     HAND = "L"
     # Load Data
 
-    dr = pd.read_csv(f"concatenated_data/r_{HAND}.csv")
+    dr = pd.read_csv(f"concatenated_data/e_{HAND}.csv")
    
 
     data = pd.concat([
