@@ -20,7 +20,7 @@ trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd', 'ERIK': 'e', 'RAH
 # -------------------------------
 
 TRAINING_MODE = False        # True: training (write to CSV), False: output (ML inference)
-TRAINER_NAME = 'ERIK'
+TRAINER_NAME = 'RAHMAN'
 
 COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
 GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
@@ -117,7 +117,7 @@ def translate_data():
             sorted_pairs = sorted(label_prob_pairs, key=lambda x: x[1], reverse=True)
 
             print("Labels and Probabilities:\n")
-            for label, prob in sorted_pairs:
+            for label, prob in sorted_pairs[:3]:
                 print(f"Label: {label}, Probability: {prob.item() * 100:.2f}%")
 
             predicted_label = label_encoder.inverse_transform(predicted)
