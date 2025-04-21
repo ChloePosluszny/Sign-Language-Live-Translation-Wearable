@@ -42,10 +42,10 @@ class RNN(nn.Module):
 
 
 if __name__ == "__main__":
-    HAND = "L"
+    HAND = "D"
     # Load Data
 
-    dr = pd.read_csv(f"concatenated_data/d_{HAND}.csv")
+    dr = pd.read_csv(f"concatenated_data/r_{HAND}.csv")
    
     data = pd.concat([
     dr
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     
     weight_decay = 1e-5 
 
-    num_epochs = 200
+    num_epochs = 250
 
 
 

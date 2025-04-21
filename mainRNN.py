@@ -9,7 +9,9 @@ import sklearn
 from sklearn.neural_network import MLPClassifier
 import pandas as pd
 from Train_RNN import RNN
+import threading
 import warnings
+
 warnings.filterwarnings('ignore')
 
 
@@ -29,11 +31,25 @@ HAND = "L"
 # Communication Port Configuration
 # -------------------------------
 BLUETOOTH_COM_PORT = 'COM5'   # Port for Bluetooth
-SERIAL_COM_PORT = 'COM3'      # Port for direct serial connection (e.g., USB)
+COM_PORT = 'COM3'      # Port for direct serial connection (e.g., USB)
 
 # Select the appropriate COM port based on COMM_MODE
-COM_PORT = BLUETOOTH_COM_PORT if COMM_MODE == "BLUETOOTH" else SERIAL_COM_PORT
+
+LEFT_COM = 'COM3'
+RIGHT_COM = 'COM5'
+
 BAUD_RATE = 115200           # Must match the ESP32's baud rate
+
+
+# -------------------------------
+# Global Variables for Data Sharing
+# -------------------------------
+LEFT_DATA = None
+RIGHT_DATA = None
+
+# Locks for thread-safe access
+left_lock = threading.Lock()
+right_lock = threading.Lock()
 
 # -------------------------------
 # File, Model, and Sensor Settings
@@ -41,19 +57,25 @@ BAUD_RATE = 115200           # Must match the ESP32's baud rate
 CSV_FILE_PATH = None  # Will be set based on user input if TRAINING_MODE is True
 CSV_TITLE = None      # Global title for the CSV
 CSV_SUBTITLE = None
-iterations = 100
-MODEL_PATH = f"RNN_model_{HAND}.pth"
+iterations = 50
+MODEL_PATH = None
+LABEL_ENCODER_PATH = None
+SCALER_PATH = None
 model = None
 scaler = None
 label_encoder  = None
 seq_len = 20
 WORD = ''
 feature_length = 15
+prediction_buffer = []
+BUFFER_SIZE = 3
 
+
+threshold = -8.8
 # Predefined sensor names (modify as needed for your setup)
 HEADER = ["hall_1", "hall_2", "hall_3", "flex_t", "flex_i", "flex_m", "flex_r", "flex_p", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z", "hand", "sign"]
-
-def load_model():
+HEADER_DOUBLE = ["hall_1_L", "hall_2_L", "hall_3_L", "flex_t_L", "flex_i_L", "flex_m_L", "flex_r_L", "flex_p_L", "accel_x_L", "accel_y_L", "accel_z_L", "gyro_x_L", "gyro_y_L", "gyro_z_L", "hand", "hall_1_R", "hall_2_R", "hall_3_R", "flex_t_R", "flex_i_R", "flex_m_R", "flex_r_R", "flex_p_R", "accel_x_R", "accel_y_R", "accel_z_R", "gyro_x_R", "gyro_y_R", "gyro_z_R", "hand", "sign"]
+def load_model(hand):
     """
     Loads the PyTorch model from the specified MODEL_PATH.
     """
@@ -61,19 +83,45 @@ def load_model():
     global scaler
     global label_encoder
     global all_labels
-    print(f"Attempting to load model from: {MODEL_PATH}")
+    
+    if hand == "clear":
+        print(f"Clearing loaded model")
+        model = None
+        scaler = None
+        label_encoder = None
+        return
     try:
+        
         model = torch.load(MODEL_PATH, weights_only=False)
         model.eval()
-        label_encoder = joblib.load(f"label_encoder_{HAND}.pkl")
-        scaler = joblib.load(f"scaler_{HAND}.pkl")
-  
+        label_encoder = joblib.load(LABEL_ENCODER_PATH)
+        scaler = joblib.load(SCALER_PATH)
 
-        # model = joblib.load(MODEL_PATH)
-        # scaler = joblib.load("scaler.pkl")
         print(f"{MODEL_PATH} loaded successfully.")
     except Exception as e:
         print(f"Error loading model: {e}")
+
+
+
+
+
+def update_prediction_buffer(predicted_label):
+    global WORD, prediction_buffer
+
+    label = str(predicted_label[0]) 
+
+    prediction_buffer.append(label)
+
+    if len(prediction_buffer) > BUFFER_SIZE:
+        prediction_buffer.pop(0)
+  
+    # Check if all elements in buffer are the same
+    if len(prediction_buffer) == BUFFER_SIZE and len(set(prediction_buffer)) == 1:
+        WORD += prediction_buffer[0]
+        prediction_buffer.clear()  
+    print(f"Prediction Buffer: {prediction_buffer}")
+    
+
     
 RNN_buffer = []
 def translate_data():
@@ -91,16 +139,11 @@ def translate_data():
         return "Model not loaded"
     # Example: Convert poll_data to a tensor, process it with the model, then decode the result.
     else:
-       
-        
-        #poll data should be a list of lists of sequence length data entries
-       
+
         normalized_buffer = scaler.transform(RNN_buffer)
         tensor_input = torch.tensor(normalized_buffer, dtype=torch.float32).unsqueeze(0)
-        if tensor_input.size(-1) != feature_length:
-            print(f"Expected 15 features, but got {tensor_input.size(-1)}")
-            return "Invalid input shape"
 
+        
         
         with torch.no_grad():
             outputs = model(tensor_input)
@@ -121,9 +164,8 @@ def translate_data():
                 print(f"Label: {label}, Probability: {prob.item() * 100:.2f}%")
 
             predicted_label = label_encoder.inverse_transform(predicted)
-            # print(f"\nOutput: {predicted_label[0]} with confidence {max_prob.item() * 100:.2f}") 
             print(f"\n\033[32mOutput: {predicted_label[0]} with confidence {max_prob.item() * 100:.2f}%\033[0m")
-            # WORD += str(predicted_label[0])
+            update_prediction_buffer(predicted_label)
 
 
 translations = []
@@ -140,23 +182,33 @@ def process_poll(poll_data):
     """
     # global old_letter
     global RNN_buffer
-    if TRAINING_MODE:
-        if GLOVE_MODE == "DOUBLE":
+    if GLOVE_MODE == "DOUBLE":
+        if MODEL_PATH == None:
+            print(f"\033[35m{WORD}\033[0m")
+            return True
+        elif "_D" in MODEL_PATH:
             combined_data = poll_data[0] + poll_data[1]
-        else:  # SINGLE mode
-            combined_data = poll_data[0]
+        elif "_L" in MODEL_PATH:
+            combined_data = poll_data[0] 
+        elif "_R" in MODEL_PATH:
+            combined_data = poll_data[1] 
         
-        if len(combined_data) != feature_length:
-            print("skipping")
-            return False
+        
+    else:  # SINGLE mode
+        combined_data = poll_data[0]
+    if TRAINING_MODE:
+        
         RNN_buffer.append(combined_data)
         # Write to CSV with the CSV_TITLE appended.
         file_exists = os.path.isfile(CSV_FILE_PATH)
         with open(CSV_FILE_PATH, mode='a', newline='') as csv_file:
             writer = csv.writer(csv_file)
             if not file_exists:
-                header = HEADER[:len(combined_data) +1]
-                writer.writerow(header)
+                if(GLOVE_MODE == "DOUBLE"):
+                    writer.writerow(HEADER_DOUBLE)
+                else:
+                    header = HEADER[:len(combined_data) +1]
+                    writer.writerow(header)
             # Append the title to the row and write it
             if len(RNN_buffer) == seq_len:
                 for i in range(seq_len):
@@ -165,22 +217,15 @@ def process_poll(poll_data):
                 print("Data written to CSV.")
             return True
     else:
-        data = poll_data[0]
-        nbr_gloves = 0
-        if GLOVE_MODE == "DOUBLE":
-            nbr_gloves = 2
-        elif GLOVE_MODE == "SINGLE":
-            nbr_gloves = 1
-        if len(data) != nbr_gloves * feature_length:
-            print(f"Skipping bad data: expected {nbr_gloves * feature_length}, got {len(data)} → {data}")
-            return False
-        # print_sensor_data_rnn(data)
-        RNN_buffer.append(poll_data[0])
-        if(len(RNN_buffer) == seq_len):
-            translate_data()
-            # print("Output: ", output)
-            RNN_buffer = []
-        return True
+        if combined_data:
+            RNN_buffer.append(combined_data)
+            if(len(RNN_buffer) == seq_len):
+                translate_data()
+                # print("Output: ", output)
+                RNN_buffer = []
+            return True
+        else:
+            return True
         
 def parse_line_to_array(line):
     """
@@ -207,11 +252,184 @@ def print_sensor_data_rnn(data: list):
     return
 
 
+def update_glove_mode():
+    global GLOVE_MODE, LEFT_DATA, RIGHT_DATA, MODEL_PATH, LABEL_ENCODER_PATH, SCALER_PATH, threshold
+
+    global RNN_buffer
+    RNN_buffer = []
+
+    with left_lock:
+        left = LEFT_DATA
+    with right_lock:
+        right = RIGHT_DATA
+
+    if left and right:
+        print(f"[LEFT] y accelerometer: {left[9]}")
+        # print(f"[LEFT] Flex sensors: {left[3]}, {left[4]}, {left[5]}, {left[6]}, {left[7]}")
+
+        print(f"[RIGHT] y accelerometer: {right[9]}")
+        # print(f"[RIGHT] Flex sensors: {right[3]}, {right[4]}, {right[5]}, {right[6]}, {right[7]}")
+        y_left = left[9]
+        y_right = right[9]
+
+        
+        flex = 3200
+        if (y_left <threshold and left[3] > flex and left[4] > flex  and left[5] > flex and left[6] > flex and left[7] > flex)  or (y_right < threshold and right[3] > flex and right[4] > flex  and right[5] > flex and right[6] > flex and right[7] > flex) :
+            
+            # Use only the active glove
+            if y_left >=threshold :
+                if "RNN_model_L.pth" == MODEL_PATH:
+                    print("\033[34mStaying on Left Model\033[0m")
+                    return
+                print("\033[35mSwitching to Left Model\033[0m")
+
+                MODEL_PATH = f"RNN_model_L.pth"
+                LABEL_ENCODER_PATH = f"label_encoder_L.pkl"
+                SCALER_PATH = "scaler_L.pkl"
+                load_model("L")
+                time.sleep(2) 
+            elif y_right >=threshold:
+                if "RNN_model_R.pth" == MODEL_PATH:
+                    print("\033[34mStaying on Left Model\033[0m")
+                    return
+                print("\033[35mSwitching to Right Model\033[0m")
+                MODEL_PATH = f"RNN_model_R.pth"
+                LABEL_ENCODER_PATH = f"label_encoder_R.pkl"
+                SCALER_PATH = "scaler_R.pkl"
+                load_model("R")
+                time.sleep(2)
+                
+            else:
+                print("\033[35mBoth gloves deactivated\033[0m")
+                MODEL_PATH = None
+                LABEL_ENCODER_PATH = None
+                SCALER_PATH = None
+                load_model("clear")
+
+        else:
+            if "RNN_model_D.pth" == MODEL_PATH:
+                print("\033[34mStaying on Double Model\033[0m")
+                return
+            print("\033[35mSwitching to Double Model\033[0m")
+            MODEL_PATH = f"RNN_model_D.pth"
+            LABEL_ENCODER_PATH = f"label_encoder_D.pkl"
+            SCALER_PATH = "scaler_D.pkl"
+            load_model("D")
+    else:
+        print("SHOULDN't BE HERE")
+
+        MODEL_PATH = f"RNN_model_D.pth"
+        LABEL_ENCODER_PATH = f"label_encoder_D.pkl"
+        SCALER_PATH = "scaler_D.pkl"
+        load_model("D")
+
+
+def Collect_double_glove_data():
+    global  LEFT_DATA, RIGHT_DATA
+   
+    if TRAINING_MODE:
+        for i in range(iterations):
+            input(f"Press ENTER when ready to sign \"{CSV_TITLE}\"  Current iteration: {i + 1}")
+            poll_data = []
+            samples_collected = 0
+
+            with left_lock:
+                LEFT_DATA = None
+            with right_lock:
+                RIGHT_DATA = None
+
+            while samples_collected < seq_len:
+                if GLOVE_MODE == "DOUBLE":
+                    with left_lock:
+                        left = LEFT_DATA
+                    with right_lock:
+                        right = RIGHT_DATA
+
+                    if left and right:
+                        poll_data = [left, right]
+                        if process_poll(poll_data): 
+                            samples_collected += 1
+                        with left_lock:
+                            LEFT_DATA = None
+                        with right_lock:
+                            RIGHT_DATA = None
+
+                elif GLOVE_MODE == "SINGLE":
+                    glove_data = None
+                    with left_lock:
+                        if LEFT_DATA:
+                            glove_data = LEFT_DATA
+                            LEFT_DATA = None
+                    if not glove_data:
+                        with right_lock:
+                            if RIGHT_DATA:
+                                glove_data = RIGHT_DATA
+                                RIGHT_DATA = None
+
+                    if glove_data:
+                        poll_data = [glove_data]
+                        if process_poll(poll_data):
+                            samples_collected += 1
+
+            # time.sleep(0.01) 
+    else:
+        poll_data = []
+        samples_collected = 0
+       
+        while samples_collected < seq_len:
+            if GLOVE_MODE == "DOUBLE":
+                with left_lock:
+                    left = LEFT_DATA
+                with right_lock:
+                    right = RIGHT_DATA
+
+                if left and right:
+                    poll_data = [left, right]
+                    if process_poll(poll_data): 
+                        samples_collected += 1
+                    
+                    if samples_collected != 20:
+                        with left_lock:
+                            LEFT_DATA = None
+                        with right_lock:
+                            RIGHT_DATA = None
+
+def read_serial_data_d(com_port, hand):
+    global LEFT_DATA, RIGHT_DATA
+  
+    try:
+        ser = serial.Serial(com_port, BAUD_RATE, timeout=1)
+        print(f"[{hand}] Connected to {com_port} in {COMM_MODE} mode.")
+        buffer = ''
+        while True:
+            # ser.reset_input_buffer()
+            data = ser.read(ser.in_waiting or 1).decode('utf-8', errors='ignore')
+       
+            if data:
+                buffer += data
+                while '\n' in buffer:
+                    line_end = buffer.find('\n')
+                    line = buffer[:line_end].strip()
+                    buffer = buffer[line_end + 1:]
+                    data_array = parse_line_to_array(line)
+              
+                    if len(data_array) == feature_length:
+                        if hand == "LEFT":
+                            with left_lock:
+                                LEFT_DATA = data_array
+                        else:
+                            with right_lock:
+                                RIGHT_DATA = data_array
+                    else:
+                        print(f"[{hand}] Invalid data length: {line} in COMPORT: {com_port}")
+    except serial.SerialException as e:
+        print(f"Error opening {com_port}: {e}")
+
 def read_serial_data():
     global WORD
     poll_data = []
     expected_arrays = 2 if GLOVE_MODE == "DOUBLE" else 1
-    serial.Serial(COM_PORT, BAUD_RATE, timeout=1).close()
+
     try:
         with serial.Serial(COM_PORT, BAUD_RATE, timeout=1) as ser:
             print(f"Connected to {COM_PORT} in {COMM_MODE} mode.")
@@ -288,15 +506,11 @@ def get_user_input():
     global CSV_FILE_PATH
     global CSV_SUBTITLE
     global CSV_TITLE
-    
+  
     CSV_TITLE = input("Enter CSV title (Sign): ")
-    
-    # if CSV_SUBTITLE == '':
-    #     CSV_SUBTITLE = trainer_names[TRAINER_NAME]
     CSV_SUBTITLE = trainer_names[TRAINER_NAME]
     
     CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}_{HAND}_dy.csv"
-    print(CSV_SUBTITLE)
     return
 
 
@@ -306,6 +520,7 @@ def main():
     if TRAINING_MODE:
         global CSV_SUBTITLE
         global iterations
+        global CSV_FILE_PATH
         # CSV_SUBTITLE = input("Enter CSV subtitle (trainer): ")
         iterations = int(input("Enter number of data points to be signed: "))
         while True: 
@@ -316,5 +531,45 @@ def main():
         load_model()
     read_serial_data()
 
+
+
+
+def main2():
+    if TRAINING_MODE:
+        global CSV_SUBTITLE, iterations
+        
+        iterations = int(input("Enter number of data points to be signed: "))
+        
+        print(CSV_SUBTITLE)
+
+        left_thread = threading.Thread(target=read_serial_data_d, args=(LEFT_COM, "LEFT"), daemon= True)
+        right_thread = threading.Thread(target=read_serial_data_d, args=(RIGHT_COM, "RIGHT"), daemon= True)
+    
+        left_thread.start()
+        right_thread.start()
+
+        # Run training loop
+        while True: 
+            get_user_input()
+            Collect_double_glove_data()
+    
+    else:
+     
+
+        left_thread = threading.Thread(target=read_serial_data_d, args=(LEFT_COM, "LEFT"), daemon= True)
+        right_thread = threading.Thread(target=read_serial_data_d, args=(RIGHT_COM, "RIGHT"), daemon= True)
+       
+        left_thread.start()
+        right_thread.start()
+
+       
+
+        # print(f"y accelerometer {LEFT_DATA[9]}")
+        while True:
+            update_glove_mode()
+            Collect_double_glove_data()
+           
+
+
 if __name__ == "__main__":
-    main()
+    main2()
