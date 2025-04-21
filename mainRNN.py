@@ -10,21 +10,9 @@ from sklearn.neural_network import MLPClassifier
 import pandas as pd
 from Train_RNN import RNN
 import warnings
+import config
 warnings.filterwarnings('ignore')
 
-
-trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd', 'ERIK': 'e', 'RAHMAN': 'r'}
-
-# -------------------------------
-# Global Mode Flags (toggle as needed)
-# -------------------------------
-
-TRAINING_MODE = False       # True: training (write to CSV), False: output (ML inference)
-TRAINER_NAME = 'DAVID'
-
-COMM_MODE = "SERIAL"       # Options: "BLUETOOTH" or "SERIAL"
-GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
-HAND = "L"
 # -------------------------------
 # Communication Port Configuration
 # -------------------------------
@@ -32,7 +20,7 @@ BLUETOOTH_COM_PORT = 'COM5'   # Port for Bluetooth
 SERIAL_COM_PORT = 'COM3'      # Port for direct serial connection (e.g., USB)
 
 # Select the appropriate COM port based on COMM_MODE
-COM_PORT = BLUETOOTH_COM_PORT if COMM_MODE == "BLUETOOTH" else SERIAL_COM_PORT
+COM_PORT = BLUETOOTH_COM_PORT if config.COMM_MODE == "BLUETOOTH" else SERIAL_COM_PORT
 BAUD_RATE = 115200           # Must match the ESP32's baud rate
 
 # -------------------------------
@@ -42,7 +30,6 @@ CSV_FILE_PATH = None  # Will be set based on user input if TRAINING_MODE is True
 CSV_TITLE = None      # Global title for the CSV
 CSV_SUBTITLE = None
 iterations = 100
-MODEL_PATH = f"RNN_model_{HAND}.pth"
 model = None
 scaler = None
 label_encoder  = None
@@ -61,17 +48,17 @@ def load_model():
     global scaler
     global label_encoder
     global all_labels
-    print(f"Attempting to load model from: {MODEL_PATH}")
+    print(f"Attempting to load model from: {config.MODEL_PATH}")
     try:
-        model = torch.load(MODEL_PATH, weights_only=False)
+        model = torch.load(config.MODEL_PATH, weights_only=False)
         model.eval()
-        label_encoder = joblib.load(f"label_encoder_{HAND}.pkl")
-        scaler = joblib.load(f"scaler_{HAND}.pkl")
+        label_encoder = joblib.load(os.path.join(config.COMMON_PATH, f"label_encoder_{config.HAND}.pkl"))
+        scaler = joblib.load(os.path.join(config.COMMON_PATH, f"scaler_{config.HAND}.pkl"))
   
 
         # model = joblib.load(MODEL_PATH)
         # scaler = joblib.load("scaler.pkl")
-        print(f"{MODEL_PATH} loaded successfully.")
+        print(f"{config.MODEL_PATH} loaded successfully.")
     except Exception as e:
         print(f"Error loading model: {e}")
     
@@ -140,8 +127,8 @@ def process_poll(poll_data):
     """
     # global old_letter
     global RNN_buffer
-    if TRAINING_MODE:
-        if GLOVE_MODE == "DOUBLE":
+    if config.TRAINING_MODE:
+        if config.GLOVE_MODE == "DOUBLE":
             combined_data = poll_data[0] + poll_data[1]
         else:  # SINGLE mode
             combined_data = poll_data[0]
@@ -167,9 +154,9 @@ def process_poll(poll_data):
     else:
         data = poll_data[0]
         nbr_gloves = 0
-        if GLOVE_MODE == "DOUBLE":
+        if config.GLOVE_MODE == "DOUBLE":
             nbr_gloves = 2
-        elif GLOVE_MODE == "SINGLE":
+        elif config.GLOVE_MODE == "SINGLE":
             nbr_gloves = 1
         if len(data) != nbr_gloves * feature_length:
             print(f"Skipping bad data: expected {nbr_gloves * feature_length}, got {len(data)} → {data}")
@@ -210,13 +197,13 @@ def print_sensor_data_rnn(data: list):
 def read_serial_data():
     global WORD
     poll_data = []
-    expected_arrays = 2 if GLOVE_MODE == "DOUBLE" else 1
+    expected_arrays = 2 if config.GLOVE_MODE == "DOUBLE" else 1
     serial.Serial(COM_PORT, BAUD_RATE, timeout=1).close()
     try:
         with serial.Serial(COM_PORT, BAUD_RATE, timeout=1) as ser:
-            print(f"Connected to {COM_PORT} in {COMM_MODE} mode.")
+            print(f"Connected to {COM_PORT} in {config.COMM_MODE} mode.")
             buffer = ''
-            if TRAINING_MODE:
+            if config.TRAINING_MODE:
                 for i in range(iterations):
                     input(f"Press ENTER when ready to sign {CSV_TITLE} Current iteration: {i +1}")
                     ser.reset_input_buffer()  # Flush old data
@@ -243,7 +230,7 @@ def read_serial_data():
                         time.sleep(0.01)
             else: #testing
                 while (1):
-                    expected_arrays = 2 if GLOVE_MODE == "DOUBLE" else 1 
+                    expected_arrays = 2 if config.GLOVE_MODE == "DOUBLE" else 1 
                      
                     # user_in = input(f"Press ENTER when ready ")
                     # if user_in == "p":
@@ -293,9 +280,9 @@ def get_user_input():
     
     # if CSV_SUBTITLE == '':
     #     CSV_SUBTITLE = trainer_names[TRAINER_NAME]
-    CSV_SUBTITLE = trainer_names[TRAINER_NAME]
+    CSV_SUBTITLE = config.trainer_names[config.TRAINER_NAME]
     
-    CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}_{HAND}_dy.csv"
+    CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}_{config.HAND}_dy.csv"
     print(CSV_SUBTITLE)
     return
 
@@ -303,7 +290,7 @@ def get_user_input():
     
 
 def main():
-    if TRAINING_MODE:
+    if config.TRAINING_MODE:
         global CSV_SUBTITLE
         global iterations
         # CSV_SUBTITLE = input("Enter CSV subtitle (trainer): ")
@@ -312,7 +299,7 @@ def main():
             get_user_input()
             read_serial_data()
     # In output mode, load the ML model.
-    if not TRAINING_MODE:
+    if not config.TRAINING_MODE:
         load_model()
     read_serial_data()
 

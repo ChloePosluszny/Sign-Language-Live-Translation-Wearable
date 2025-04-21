@@ -10,19 +10,8 @@ from sklearn.neural_network import MLPClassifier
 import pandas as pd
 from Train_RNN import RNN
 import warnings
+import config
 warnings.filterwarnings('ignore')
-
-
-trainer_names = {'ALFONSO': 'a1', 'CHLOE': 'c3', 'DAVID': 'd', 'ERIK': 'e', 'RAHMAN': 'r'}
-
-# -------------------------------
-# Global Mode Flags (toggle as needed)
-# -------------------------------
-TRAINING_MODE = True        # True: training (write to CSV), False: output (ML inference)
-TRAINER_NAME = 'DAVID'
-COMM_MODE = "SERIAL"         # Options: "BLUETOOTH" or "SERIAL"
-GLOVE_MODE = "SINGLE"        # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
-HAND = "L"
 
 # -------------------------------
 # Communication Port Configuration
@@ -31,7 +20,7 @@ BLUETOOTH_COM_PORT = 'COM5'   # Port for Bluetooth
 SERIAL_COM_PORT = 'COM3'      # Port for direct serial connection (e.g., USB)
 
 # Select the appropriate COM port based on COMM_MODE
-COM_PORT = BLUETOOTH_COM_PORT if COMM_MODE == "BLUETOOTH" else SERIAL_COM_PORT
+COM_PORT = BLUETOOTH_COM_PORT if config.COMM_MODE == "BLUETOOTH" else SERIAL_COM_PORT
 BAUD_RATE = 115200           # Must match the ESP32's baud rate
 
 # -------------------------------
@@ -40,7 +29,7 @@ BAUD_RATE = 115200           # Must match the ESP32's baud rate
 CSV_FILE_PATH = None  # Will be set based on user input if TRAINING_MODE is True
 CSV_TITLE = None      # Global title for the CSV
 TRAINING_TIME = 5
-MODEL_PATH = "RNN_model.pth" # Paths: RNN_model.pth, mlp_translation_model.pkl
+# training mode, trainer name, glove mode, hand, left_com, right_com, model path, scaler, label_encoder
 model = None
 scaler = None
 label_encoder  = None
@@ -57,16 +46,16 @@ def load_model():
     global model
     global scaler
     global label_encoder
-    print(f"Attempting to load model from: {MODEL_PATH}")
+    print(f"Attempting to load model from: {config.MODEL_PATH}")
     try:
-        model = torch.load(MODEL_PATH, weights_only=False)
+        model = torch.load(config.MODEL_PATH, weights_only=False)
         model.eval()
 
         label_encoder = 0
-        if "RNN" in MODEL_PATH:
+        if "RNN" in config.MODEL_PATH:
             label_encoder = joblib.load("label_encoder.pkl")
-        elif "mlp" in MODEL_PATH:
-            model = joblib.load(MODEL_PATH)
+        elif "mlp" in config.MODEL_PATH:
+            model = joblib.load(config.MODEL_PATH)
             scaler = joblib.load("scaler.pkl")
         print("Model loaded successfully.")
     except Exception as e:
@@ -87,14 +76,14 @@ def translate_data(poll_data):
     # Example: Convert poll_data to a tensor, process it with the model, then decode the result.
     else:
         #THIS IS MLP
-        if "mlp" in MODEL_PATH:
+        if "mlp" in config.MODEL_PATH:
             converted_data = np.array(poll_data)
             # probabilities = model.predict_proba(converted_data)
             converted_data = converted_data.reshape(1,-1)
             prediction = model.predict(converted_data)
             return prediction[0]
         
-        elif "RNN" in MODEL_PATH:
+        elif "RNN" in config.MODEL_PATH:
             #THIS IS RNN
             #poll data should be a list of lists of sequence length data entries
             tensor_input = torch.tensor(poll_data, dtype=torch.float32).unsqueeze(0)
@@ -149,8 +138,8 @@ def process_poll(poll_data):
     """
     combined_data = []
     # global old_letter
-    if TRAINING_MODE:
-        if GLOVE_MODE == "DOUBLE":
+    if config.TRAINING_MODE:
+        if config.GLOVE_MODE == "DOUBLE":
             combined_data = poll_data[0] + poll_data[1]
         else:  # SINGLE mode
             combined_data = poll_data[0]
@@ -209,17 +198,17 @@ def read_serial_data():
     expected number of arrays is received, the poll is processed according to TRAINING_MODE.
     """
     poll_data = []
-    expected_arrays = 2 if GLOVE_MODE == "DOUBLE" else 1
+    expected_arrays = 2 if config.GLOVE_MODE == "DOUBLE" else 1
     
     serial.Serial(COM_PORT, BAUD_RATE, timeout=1).close()
 
     try:
         with serial.Serial(COM_PORT, BAUD_RATE, timeout=1) as ser:
-            print(f"Connected to {COM_PORT} in {COMM_MODE} mode.")
+            print(f"Connected to {COM_PORT} in {config.COMM_MODE} mode.")
             buffer = ''
-            if TRAINING_MODE:
+            if config.TRAINING_MODE:
                 start_time = time.time()
-            while TRAINING_MODE == 0 or time.time() - start_time < TRAINING_TIME:
+            while config.TRAINING_MODE == 0 or time.time() - start_time < TRAINING_TIME:
                 data = ser.read_all().decode('utf-8', errors='ignore')
                 if data:
                     buffer += data
@@ -260,18 +249,18 @@ def get_user_input():
     # timer = input("Enter training time (in seconds):")
     # if CSV_SUBTITLE == '':
     #     CSV_SUBTITLE = trainer_names[TRAINER_NAME]
-    CSV_SUBTITLE = trainer_names[TRAINER_NAME]
+    CSV_SUBTITLE = config.trainer_names[config.TRAINER_NAME]
     # if timer != '':
     #     TRAINING_TIME = int(timer)
-    CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}_{HAND}.csv"
+    CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}_{config.HAND}.csv"
     return
 
 if __name__ == "__main__":
-    if TRAINING_MODE:
+    if config.TRAINING_MODE:
         while True: 
             get_user_input()
             read_serial_data()
     # In output mode, load the ML model.
-    if not TRAINING_MODE:
+    if not config.TRAINING_MODE:
         load_model()
     read_serial_data()

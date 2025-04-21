@@ -14,6 +14,8 @@ import joblib
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
+import config
+import os
 
 class RNN(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, num_classes, dropout=0.3):
@@ -42,14 +44,10 @@ class RNN(nn.Module):
 
 
 if __name__ == "__main__":
-    HAND = "L"
     # Load Data
-
-    dr = pd.read_csv(f"concatenated_data/d_{HAND}.csv")
+    dr = pd.read_csv(f"concatenated_data/{config.trainer_names[config.TRAINER_NAME]}_{config.HAND}.csv")
    
-    data = pd.concat([
-    dr
-], ignore_index=True)
+    data = pd.concat([dr], ignore_index=True)
     
     X = data.drop(['sign'], axis='columns').values 
     y = data['sign']
@@ -57,11 +55,12 @@ if __name__ == "__main__":
 
     scaler = StandardScaler()
     X = scaler.fit_transform(X)
-    joblib.dump(scaler, f"scaler_{HAND}.pkl")
+    joblib.dump(scaler, os.path.join(config.COMMON_PATH, f"scaler_{config.HAND}.pkl"))
 
     label_encoder = LabelEncoder()
     y = label_encoder.fit_transform(y)  # Encode labels as integers
-    joblib.dump(label_encoder, f"label_encoder_{HAND}.pkl")
+    joblib.dump(label_encoder, os.path.join(config.COMMON_PATH, f"label_encoder_{config.HAND}.pkl"))
+    
 
     #will be constant depending on what why decide and how many signs there are
     input_size = X.shape[1]  # Number of features
@@ -147,7 +146,7 @@ if __name__ == "__main__":
                 best_loss = test_loss
                 best_test_acc_epoch = epoch
                 model_best = model
-                torch.save(model, f"RNN_model_{HAND}.pth")
+                torch.save(model, os.path.join(config.COMMON_PATH, f"RNN_model_{config.HAND}.pth"))
                 
                 
 
@@ -156,7 +155,7 @@ if __name__ == "__main__":
 
 
 
-    model_best = torch.load(f"RNN_model_{HAND}.pth", weights_only=False)
+    model_best = torch.load(os.path.join(config.COMMON_PATH, f"RNN_model_{config.HAND}.pth"), weights_only=False)
 
     model_best.eval()
     with torch.no_grad():
@@ -181,7 +180,7 @@ if __name__ == "__main__":
         plt.xticks(rotation=45)
         plt.yticks(rotation=0)
         plt.tight_layout()
-        plt.savefig('RNNHeatmap.PNG')
+        plt.savefig(os.path.join(config.COMMON_PATH, f'RNN_Heatmap_{config.HAND}.PNG'))
         # plt.show()
 
 
@@ -209,7 +208,7 @@ if __name__ == "__main__":
     plt.gca().yaxis.set_major_formatter(PercentFormatter()) 
 
     plt.tight_layout()
-    plt.savefig('RNN_Plots.PNG')
+    plt.savefig(os.path.join(config.COMMON_PATH, f'RNN_Plots_{config.HAND}.PNG'))
     # plt.show()
 
 
