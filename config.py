@@ -5,7 +5,7 @@ TRAINING_MODE = False       # True: training (write to CSV), False: output (ML i
 TRAINER_NAME = 'DAVID'
 LEFT_COM = 'COM3'
 RIGHT_COM = 'COM5'
-GLOVE_MODE = "SINGLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
+GLOVE_MODE = "DOUBLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
 HAND = "R" #FOR SINGLE MODE
 
 COMMON_PATH = os.path.join("Models", trainer_names[TRAINER_NAME])
