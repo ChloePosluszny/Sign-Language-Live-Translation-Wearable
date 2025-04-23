@@ -274,29 +274,29 @@ def update_glove_mode():
                     if MODEL_PATH_LOCAL.endswith("RNN_model_L.pth"):
                         print("\033[34mStaying on Left Model\033[0m")
                         return
-                    print("\033[35mSwitching to Left Model\033[0m")
+                print("\033[35mSwitching to Left Model\033[0m")
                 
-                    MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_L.pth")
-                    LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_L.pkl")
-                    SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_L.pkl")
-                    prediction_buffer.clear()
-                    load_model("L")
-                    print(f"\033[33mWait for Model load\033[0m")
-                    time.sleep(2) 
+                MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_L.pth")
+                LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_L.pkl")
+                SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_L.pkl")
+                prediction_buffer.clear()
+                load_model("L")
+                print(f"\033[33mWait for Model load\033[0m")
+                time.sleep(2) 
 
             elif y_right >=threshold:
                 if MODEL_PATH_LOCAL:
                     if MODEL_PATH_LOCAL.endswith("RNN_model_R.pth"):
                         print("\033[34mStaying on Right Model\033[0m")
                         return
-                    print("\033[35mSwitching to Right Model\033[0m")
-                    MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_R.pth")
-                    LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_R.pkl")
-                    SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_R.pkl")
-                    prediction_buffer.clear()
-                    load_model("R")
-                    print(f"\033[33mWait for Model load\033[0m")
-                    time.sleep(2)
+                print("\033[35mSwitching to Right Model\033[0m")
+                MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_R.pth")
+                LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_R.pkl")
+                SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_R.pkl")
+                prediction_buffer.clear()
+                load_model("R")
+                print(f"\033[33mWait for Model load\033[0m")
+                time.sleep(2)
                 
             else:
                 print("\033[35mBoth gloves deactivated\033[0m")
