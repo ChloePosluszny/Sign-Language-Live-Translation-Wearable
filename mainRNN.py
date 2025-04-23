@@ -270,29 +270,33 @@ def update_glove_mode():
             
             # Use only the active glove
             if y_left >=threshold :
+                if MODEL_PATH_LOCAL:
+                    if MODEL_PATH_LOCAL.endswith("RNN_model_L.pth"):
+                        print("\033[34mStaying on Left Model\033[0m")
+                        return
+                    print("\033[35mSwitching to Left Model\033[0m")
                 
-                if MODEL_PATH_LOCAL.endswith("RNN_model_L.pth"):
-                    print("\033[34mStaying on Left Model\033[0m")
-                    return
-                print("\033[35mSwitching to Left Model\033[0m")
-              
-                MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_L.pth")
-                LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_L.pkl")
-                SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_L.pkl")
-                load_model("L")
-                print(f"\033[33mWait for Model load\033[0m")
-                time.sleep(2) 
+                    MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_L.pth")
+                    LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_L.pkl")
+                    SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_L.pkl")
+                    prediction_buffer.clear()
+                    load_model("L")
+                    print(f"\033[33mWait for Model load\033[0m")
+                    time.sleep(2) 
 
             elif y_right >=threshold:
-                if MODEL_PATH_LOCAL.endswith("RNN_model_R.pth"):
-                    print("\033[34mStaying on Right Model\033[0m")
-                    return
-                print("\033[35mSwitching to Right Model\033[0m")
-                MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_R.pth")
-                LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_R.pkl")
-                SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_R.pkl")
-                load_model("R")
-                time.sleep(2)
+                if MODEL_PATH_LOCAL:
+                    if MODEL_PATH_LOCAL.endswith("RNN_model_R.pth"):
+                        print("\033[34mStaying on Right Model\033[0m")
+                        return
+                    print("\033[35mSwitching to Right Model\033[0m")
+                    MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_R.pth")
+                    LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_R.pkl")
+                    SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_R.pkl")
+                    prediction_buffer.clear()
+                    load_model("R")
+                    print(f"\033[33mWait for Model load\033[0m")
+                    time.sleep(2)
                 
             else:
                 print("\033[35mBoth gloves deactivated\033[0m")
@@ -302,21 +306,24 @@ def update_glove_mode():
                 load_model("clear")
 
         else:
-            # if MODEL_PATH_LOCAL == None:
-            #     print("\033[35mSwitching to Double Model\033[0m")
-            #     MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_D.pth")
-            #     LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_D.pkl")
-            #     SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_D.pkl")
-            #     load_model("D")
-            #     return
-            # elif MODEL_PATH_LOCAL.endswith("RNN_model_D.pth"):
-            #     print("\033[34mStaying on Right Model\033[0m")
-            # else:
-            print("\033[35mSwitching to Double Model\033[0m")
-            MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_D.pth")
-            LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_D.pkl")
-            SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_D.pkl")
-            load_model("D")
+            if MODEL_PATH_LOCAL == None:
+                print("\033[35mSwitching to Double Model\033[0m")
+                MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_D.pth")
+                LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_D.pkl")
+                SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_D.pkl")
+                load_model("D")
+                return
+            elif MODEL_PATH_LOCAL.endswith("RNN_model_D.pth"):
+                print("\033[34mStaying on Double Model\033[0m")
+            else:
+                print("\033[35mSwitching to Double Model\033[0m")
+                MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_D.pth")
+                LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_D.pkl")
+                SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_D.pkl")
+                prediction_buffer.clear()
+                load_model("D")
+                print(f"\033[33mWait for Model load\033[0m")
+                time.sleep(2)
 
     else:
         print("\033[31mINVALID DATA\033[0m")
@@ -522,7 +529,7 @@ def get_user_input():
 
 def printSign():
     global MODEL_PATH_LOCAL
-    if MODEL_PATH_LOCAL == None: #only print if hands are down
+    if not MODEL_PATH_LOCAL: #only print if hands are down
         print(f"\033[38;2;255;165;0m{WORD}\033[0m")
 
     
