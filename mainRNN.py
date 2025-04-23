@@ -105,7 +105,7 @@ def update_prediction_buffer(predicted_label):
     if len(prediction_buffer) > BUFFER_SIZE:
         prediction_buffer.pop(0)
   
-    print(f"Prediction Buffer: {prediction_buffer}")
+    print(f"Prediction Buffer: {prediction_buffer}\n")
     
     if len(prediction_buffer) == BUFFER_SIZE and len(set(prediction_buffer)) == 1:
         print(f"\033[33mWait for Model load\033[0m")
@@ -176,7 +176,6 @@ def process_poll(poll_data):
     global RNN_buffer
     if config.GLOVE_MODE == "DOUBLE":
         if MODEL_PATH_LOCAL == None:
-            print(f"\033[35m{WORD}\033[0m")
             return True
         elif "_D" in MODEL_PATH_LOCAL:
             combined_data = poll_data[0] + poll_data[1]
@@ -184,12 +183,11 @@ def process_poll(poll_data):
             combined_data = poll_data[0] 
         elif "_R" in MODEL_PATH_LOCAL:
             combined_data = poll_data[1] 
-        
-        
+          
     else:  # SINGLE mode
         combined_data = poll_data[0]
+
     if config.TRAINING_MODE:
-        
         RNN_buffer.append(combined_data)
         # Write to CSV with the CSV_TITLE appended.
         file_exists = os.path.isfile(CSV_FILE_PATH)
@@ -256,6 +254,8 @@ def update_glove_mode():
         right = RIGHT_DATA
 
     if left and right:
+        if left[14] == 1:
+           print(f"\033[31mERROR: {config.LEFT_COM} for Left Glove is connected to the Right Glove\033[0m")
         print(f"[LEFT] y accelerometer: {left[9]}")
         print(f"[LEFT] Flex sensors: {left[3]}, {left[4]}, {left[5]}, {left[6]}, {left[7]}")
 
@@ -302,14 +302,22 @@ def update_glove_mode():
                 load_model("clear")
 
         else:
-            # if MODEL_PATH_LOCAL == :
-            #     print("\033[34mStaying on Double Model\033[0m")
+            # if MODEL_PATH_LOCAL == None:
+            #     print("\033[35mSwitching to Double Model\033[0m")
+            #     MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_D.pth")
+            #     LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_D.pkl")
+            #     SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_D.pkl")
+            #     load_model("D")
             #     return
+            # elif MODEL_PATH_LOCAL.endswith("RNN_model_D.pth"):
+            #     print("\033[34mStaying on Right Model\033[0m")
+            # else:
             print("\033[35mSwitching to Double Model\033[0m")
             MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_D.pth")
             LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_D.pkl")
             SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_D.pkl")
             load_model("D")
+
     else:
         print("\033[31mINVALID DATA\033[0m")
 
@@ -514,29 +522,29 @@ def get_user_input():
 
 def printSign():
     global MODEL_PATH_LOCAL
-    if MODEL_PATH_LOCAL == None:
+    if MODEL_PATH_LOCAL == None: #only print if hands are down
         print(f"\033[38;2;255;165;0m{WORD}\033[0m")
 
     
 
-# def main():
-#     if config.TRAINING_MODE:
-#         global CSV_SUBTITLE
-#         global iterations
-#         # CSV_SUBTITLE = input("Enter CSV subtitle (trainer): ")
-#         iterations = int(input("Enter number of data points to be signed: "))
-#         while True: 
-#             get_user_input()
-#             read_serial_data()
-#     # In output mode, load the ML model.
-#     if not config.TRAINING_MODE:
-#         load_model()
-#     read_serial_data()
+def mainsingle():
+    if config.TRAINING_MODE:
+        global CSV_SUBTITLE
+        global iterations
+        # CSV_SUBTITLE = input("Enter CSV subtitle (trainer): ")
+        iterations = int(input("Enter number of data points to be signed: "))
+        while True: 
+            get_user_input()
+            read_serial_data()
+    # In output mode, load the ML model.
+    if not config.TRAINING_MODE:
+        load_model()
+    read_serial_data()
 
 
 
 
-def main2():
+def maindouble():
     if config.TRAINING_MODE:
         global CSV_SUBTITLE, iterations
         
@@ -566,7 +574,7 @@ def main2():
 
         time.sleep(1)
 
-        # print(f"y accelerometer {LEFT_DATA[9]}")
+     
         while True:
             update_glove_mode()
             printSign()
@@ -578,4 +586,7 @@ def main2():
 
 
 if __name__ == "__main__":
-    main2()
+    if config.GLOVE_MODE == "DOUBLE":
+        maindouble()
+    else:
+        mainsingle()
