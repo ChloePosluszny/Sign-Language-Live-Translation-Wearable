@@ -340,10 +340,10 @@ def Collect_double_glove_data():
    
     if config.TRAINING_MODE:
         for i in range(iterations):
-            # print("chiiiil")
-            # time.sleep(2) 
-            # print("Begin Signing")
-            input(f"Press ENTER when ready to sign \"{CSV_TITLE}\"  Current iteration: {i + 1}")
+            print("Assume the position")
+            time.sleep(2)
+            print("Begin Signing")
+            # input(f"Press ENTER when ready to sign \"{CSV_TITLE}\"  Current iteration: {i + 1}")
             poll_data = []
             samples_collected = 0
 

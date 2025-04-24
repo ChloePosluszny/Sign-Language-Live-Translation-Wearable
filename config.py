@@ -2,7 +2,7 @@ import os
 trainer_names = {'ALFONSO': 'a', 'CHLOE': 'c', 'DAVID': 'd', 'ERIK': 'e', 'RAHMAN': 'r', 'TEST': 't'}
 
 TRAINING_MODE = True       # True: training (write to CSV), False: output (ML inference)
-TRAINER_NAME = 'TEST'
+TRAINER_NAME = 'DAVID'
 LEFT_COM = 'COM3'
 RIGHT_COM = 'COM6'
 GLOVE_MODE = "DOUBLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
