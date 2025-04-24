@@ -18,11 +18,6 @@ warnings.filterwarnings('ignore')
 # Communication Port Configuration
 # -------------------------------
 
-
-# Select the appropriate COM port 
-
-
-
 BAUD_RATE = 115200           # Must match the ESP32's baud rate
 
 # -------------------------------
@@ -70,7 +65,6 @@ def load_model(hand):
     global model
     global scaler
     global label_encoder
-    global all_labels
     
     if hand == "clear":
         print(f"Clearing loaded model and Buffer")
@@ -92,9 +86,6 @@ def load_model(hand):
         print(f"Error loading model: {e}")
 
 
-
-
-
 def update_prediction_buffer(predicted_label):
     global WORD, prediction_buffer
 
@@ -112,8 +103,6 @@ def update_prediction_buffer(predicted_label):
         WORD += sign
         prediction_buffer.clear()  
    
-    
-
     
 RNN_buffer = []
 def translate_data():
@@ -172,7 +161,6 @@ def process_poll(poll_data):
     Args:
         poll_data: List of arrays from the glove(s).
     """
-    # global old_letter
     global RNN_buffer
     if config.GLOVE_MODE == "DOUBLE" and not config.TRAINING_MODE:
         if not MODEL_PATH_LOCAL:
@@ -184,7 +172,7 @@ def process_poll(poll_data):
         elif "_R" in MODEL_PATH_LOCAL:
             combined_data = poll_data[1] 
     elif config.GLOVE_MODE == "DOUBLE":
-            combined_data = poll_data[0] + poll_data[1]      
+        combined_data = poll_data[0] + poll_data[1]      
     else:  # SINGLE mode
         combined_data = poll_data[0]
 
@@ -270,34 +258,31 @@ def update_glove_mode():
         if (y_left <threshold and left[3] > flex and left[4] > flex  and left[5] > 2500 and left[6] > flex and left[7] > flex)  or (y_right < threshold and right[3] > 3000 and right[4] > flex  and right[5] > flex and right[6] > flex and right[7] > flex) :
             
             # Use only the active glove
-            if y_left >=threshold :
-                if MODEL_PATH_LOCAL:
-                    if MODEL_PATH_LOCAL.endswith("RNN_model_L.pth"):
-                        print("\033[34mStaying on Left Model\033[0m")
-                        return
-                print("\033[35mSwitching to Left Model\033[0m")
-                
-                MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_L.pth")
-                LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_L.pkl")
-                SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_L.pkl")
-                prediction_buffer.clear()
-                load_model("L")
-                print(f"\033[33mWait for Model load\033[0m")
-                time.sleep(2) 
+            if y_left >= threshold:
+                if MODEL_PATH_LOCAL and MODEL_PATH_LOCAL.endswith("RNN_model_L.pth"):
+                    print("\033[34mStaying on Left Model\033[0m")
+                else:    
+                    print("\033[35mSwitching to Left Model\033[0m")
+                    MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_L.pth")
+                    LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_L.pkl")
+                    SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_L.pkl")
+                    prediction_buffer.clear()
+                    load_model("L")
+                    print(f"\033[33mWait for Model load\033[0m")
+                    time.sleep(2)
 
-            elif y_right >=threshold:
-                if MODEL_PATH_LOCAL:
-                    if MODEL_PATH_LOCAL.endswith("RNN_model_R.pth"):
-                        print("\033[34mStaying on Right Model\033[0m")
-                        return
-                print("\033[35mSwitching to Right Model\033[0m")
-                MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_R.pth")
-                LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_R.pkl")
-                SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_R.pkl")
-                prediction_buffer.clear()
-                load_model("R")
-                print(f"\033[33mWait for Model load\033[0m")
-                time.sleep(2)
+            elif y_right >= threshold:
+                if MODEL_PATH_LOCAL and MODEL_PATH_LOCAL.endswith("RNN_model_R.pth"):
+                    print("\033[34mStaying on Right Model\033[0m")
+                else:  
+                    print("\033[35mSwitching to Right Model\033[0m")
+                    MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_R.pth")
+                    LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_R.pkl")
+                    SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_R.pkl")
+                    prediction_buffer.clear()
+                    load_model("R")
+                    print(f"\033[33mWait for Model load\033[0m")
+                    time.sleep(2)
                 
             else:
                 print("\033[35mBoth gloves deactivated\033[0m")
@@ -307,14 +292,7 @@ def update_glove_mode():
                 load_model("clear")
 
         else:
-            if MODEL_PATH_LOCAL == None:
-                print("\033[35mSwitching to Double Model\033[0m")
-                MODEL_PATH_LOCAL = os.path.join(config.COMMON_PATH, f"RNN_model_D.pth")
-                LABEL_ENCODER_PATH = os.path.join(config.COMMON_PATH, f"label_encoder_D.pkl")
-                SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_D.pkl")
-                load_model("D")
-                return
-            elif MODEL_PATH_LOCAL.endswith("RNN_model_D.pth"):
+            if MODEL_PATH_LOCAL and MODEL_PATH_LOCAL.endswith("RNN_model_D.pth"):
                 print("\033[34mStaying on Double Model\033[0m")
             else:
                 print("\033[35mSwitching to Double Model\033[0m")
@@ -368,7 +346,6 @@ def Collect_double_glove_data():
                         with right_lock:
                             RIGHT_DATA = None
 
-            # time.sleep(0.01) 
     else:
         poll_data = []
         samples_collected = 0

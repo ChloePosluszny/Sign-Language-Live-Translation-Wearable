@@ -79,7 +79,7 @@ if __name__ == "__main__":
     
     weight_decay = 1e-5 
 
-    num_epochs = 250
+    num_epochs = 200
 
 
 
