@@ -174,8 +174,8 @@ def process_poll(poll_data):
     """
     # global old_letter
     global RNN_buffer
-    if config.GLOVE_MODE == "DOUBLE":
-        if MODEL_PATH_LOCAL == None:
+    if config.GLOVE_MODE == "DOUBLE" and not config.TRAINING_MODE:
+        if not MODEL_PATH_LOCAL:
             return True
         elif "_D" in MODEL_PATH_LOCAL:
             combined_data = poll_data[0] + poll_data[1]
@@ -183,7 +183,8 @@ def process_poll(poll_data):
             combined_data = poll_data[0] 
         elif "_R" in MODEL_PATH_LOCAL:
             combined_data = poll_data[1] 
-          
+    elif config.GLOVE_MODE == "DOUBLE":
+            combined_data = poll_data[0] + poll_data[1]      
     else:  # SINGLE mode
         combined_data = poll_data[0]
 
@@ -339,6 +340,9 @@ def Collect_double_glove_data():
    
     if config.TRAINING_MODE:
         for i in range(iterations):
+            # print("chiiiil")
+            # time.sleep(2) 
+            # print("Begin Signing")
             input(f"Press ENTER when ready to sign \"{CSV_TITLE}\"  Current iteration: {i + 1}")
             poll_data = []
             samples_collected = 0
@@ -363,23 +367,6 @@ def Collect_double_glove_data():
                             LEFT_DATA = None
                         with right_lock:
                             RIGHT_DATA = None
-
-                elif config.GLOVE_MODE == "SINGLE":
-                    glove_data = None
-                    with left_lock:
-                        if LEFT_DATA:
-                            glove_data = LEFT_DATA
-                            LEFT_DATA = None
-                    if not glove_data:
-                        with right_lock:
-                            if RIGHT_DATA:
-                                glove_data = RIGHT_DATA
-                                RIGHT_DATA = None
-
-                    if glove_data:
-                        poll_data = [glove_data]
-                        if process_poll(poll_data):
-                            samples_collected += 1
 
             # time.sleep(0.01) 
     else:
@@ -525,6 +512,7 @@ def get_user_input():
     
     CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}_{config.HAND}_dy.csv"
     print(CSV_SUBTITLE)
+    print(CSV_FILE_PATH)
     return
 
 def printSign():
@@ -556,8 +544,6 @@ def maindouble():
         global CSV_SUBTITLE, iterations
         
         iterations = int(input("Enter number of data points to be signed: "))
-        
-        print(CSV_SUBTITLE)
 
         left_thread = threading.Thread(target=read_serial_data_d, args=(config.LEFT_COM, "LEFT"), daemon= True)
         right_thread = threading.Thread(target=read_serial_data_d, args=(config.RIGHT_COM, "RIGHT"), daemon= True)
