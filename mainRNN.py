@@ -1,3 +1,5 @@
+# mainRNN.py
+
 import serial
 import time
 import csv
@@ -44,20 +46,14 @@ def load_model():
     """
     Loads the PyTorch model from the specified MODEL_PATH.
     """
-    global model
-    global scaler
-    global label_encoder
-    global all_labels
-    print(f"Attempting to load model from: {config.MODEL_PATH}")
+    global model, scaler, label_encoder, all_labels
+    print(f"Loading model from: {config.MODEL_PATH}")
     try:
         model = torch.load(config.MODEL_PATH, weights_only=False)
         model.eval()
-        label_encoder = joblib.load(os.path.join(config.COMMON_PATH, f"label_encoder_{config.HAND}.pkl"))
         scaler = joblib.load(os.path.join(config.COMMON_PATH, f"scaler_{config.HAND}.pkl"))
-  
-
-        # model = joblib.load(MODEL_PATH)
-        # scaler = joblib.load("scaler.pkl")
+        label_encoder = joblib.load(os.path.join(config.COMMON_PATH, f"label_encoder_{config.HAND}.pkl"))
+        print("INFER encoder classes:", list(label_encoder.classes_))
         print(f"{config.MODEL_PATH} loaded successfully.")
     except Exception as e:
         print(f"Error loading model: {e}")
@@ -286,8 +282,6 @@ def get_user_input():
     print(CSV_SUBTITLE)
     return
 
-
-    
 
 def main():
     if config.TRAINING_MODE:
