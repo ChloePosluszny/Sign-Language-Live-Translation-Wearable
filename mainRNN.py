@@ -31,7 +31,6 @@ RIGHT_DATA = None
 left_lock = threading.Lock()
 right_lock = threading.Lock()
 
-
 # -------------------------------
 # File, Model, and Sensor Settings
 # -------------------------------
@@ -54,7 +53,6 @@ printed = False  # For testing mode, handles glove deactivation printing
 MODEL_PATH_LOCAL = None
 LABEL_ENCODER_PATH = None
 SCALER_PATH = None
-
 
 # Predefined sensor names (modify as needed for your setup)
 HEADER = ["hall_1", "hall_2", "hall_3", "flex_t", "flex_i", "flex_m", "flex_r", "flex_p", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z", "hand", "sign"]
@@ -108,7 +106,7 @@ def update_prediction_buffer(predicted_label):
             WORD += sign
         prediction_buffer.clear()  
    
-    
+
 RNN_buffer = []
 def translate_data():
     """
@@ -129,8 +127,6 @@ def translate_data():
         normalized_buffer = scaler.transform(RNN_buffer)
         tensor_input = torch.tensor(normalized_buffer, dtype=torch.float32).unsqueeze(0)
 
-        
-        
         with torch.no_grad():
             outputs = model(tensor_input)
             probs = torch.softmax(outputs, dim=1)
@@ -260,8 +256,6 @@ def update_glove_mode():
         y_left = left[9]
         y_right = right[9]
 
-        
-       
         if (is_glove_deactivated(left) or is_glove_deactivated(right)) :
             
             # Use only the active glove
@@ -363,7 +357,6 @@ def Collect_double_glove_data():
                     with right_lock:
                         RIGHT_DATA = None
     
-            # time.sleep(0.01) 
     else:
         poll_data = []
         samples_collected = 0
@@ -421,7 +414,6 @@ def read_serial_data_single():
     global WORD, RNN_buffer, prediction_buffer
     poll_data = []
     expected_arrays = 2 if config.GLOVE_MODE == "DOUBLE" else 1
-    
 
     try:
         with serial.Serial(config.LEFT_COM, BAUD_RATE, timeout=1) as ser:
@@ -488,8 +480,8 @@ def read_serial_data_single():
                                                 if (is_glove_deactivated(data_array)):
                                                     RNN_buffer = []
                                                     print("\033[35mTranslation deactivated\033[0m")
-                                                    print(f"y accelerometer: {data_array[9]}")
-                                                    print(f"Flex sensors: {data_array[3]}, {data_array[4]}, {data_array[5]}, {data_array[6]}, {data_array[7]}")
+                                                    # print(f"y accelerometer: {data_array[9]}")
+                                                    # print(f"Flex sensors: {data_array[3]}, {data_array[4]}, {data_array[5]}, {data_array[6]}, {data_array[7]}")
                                                     printSign()
                                                     printed = True
                                                     prediction_buffer.clear()
@@ -532,8 +524,6 @@ def get_user_input():
     
     CSV_TITLE = input("Enter CSV title (Sign): ")
     
-    # if CSV_SUBTITLE == '':
-    #     CSV_SUBTITLE = trainer_names[TRAINER_NAME]
     CSV_SUBTITLE = config.trainer_names[config.TRAINER_NAME]
     
     CSV_FILE_PATH = f"training_data/{CSV_TITLE}_{CSV_SUBTITLE}_{config.HAND}_dy.csv"

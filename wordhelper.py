@@ -20,12 +20,3 @@ def insert_spaces_for_names(text, names_set):
             result += text[idx]
             idx += 1
     return result.strip()
-
-# Example usage
-names_set = load_names('names.txt')
-
-input_text = "hello davidcassitymy name is rahmankhandakar"
-
-output = insert_spaces_for_names(input_text.lower(), names_set)
-print(output.replace("  ", " "))
-
