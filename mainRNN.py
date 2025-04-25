@@ -205,7 +205,12 @@ def read_serial_data():
             buffer = ''
             if config.TRAINING_MODE:
                 for i in range(iterations):
-                    input(f"Press ENTER when ready to sign {CSV_TITLE} Current iteration: {i +1}")
+                    if config.TIMER_MODE:
+                        print("Assume the position")
+                        time.sleep(2)
+                        print("Begin Signing")
+                    else:
+                        input(f"Press ENTER when ready to sign {CSV_TITLE} Current iteration: {i + 1}")
                     ser.reset_input_buffer()  # Flush old data
                     poll_data = []
                     samples_collected = 0
@@ -231,15 +236,6 @@ def read_serial_data():
             else: #testing
                 while (1):
                     expected_arrays = 2 if config.GLOVE_MODE == "DOUBLE" else 1 
-                     
-                    # user_in = input(f"Press ENTER when ready ")
-                    # if user_in == "p":
-                    #     print(f"\033[35m{WORD}\033[0m")
-                    #     continue
-                    # if user_in == "d":
-                    #     WORD = WORD[:-1]
-                    #     print(f"\033[35m{WORD}\033[0m")
-                    #     continue
                     ser.reset_input_buffer()  # Flush old data
                     poll_data = []
                     samples_collected = 0
@@ -286,8 +282,6 @@ def get_user_input():
     print(CSV_SUBTITLE)
     return
 
-
-    
 
 def main():
     if config.TRAINING_MODE:

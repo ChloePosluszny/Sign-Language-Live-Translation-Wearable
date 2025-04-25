@@ -44,18 +44,6 @@ def GetFiles():
             training_files[group_key].append(file)
             
 
-# Concatenate the individual training data files into concatenated training data files
-def ConcatenateFiles_Multiple():
-    for basefile in training_files:
-        data = []
-        for file in training_files[basefile]:
-            df = pd.read_csv(f"{TRAINING_DATA_PATH}/{file}")
-            df = AlignFile(df)
-            data.append(df)
-        new_Data = pd.concat(data)
-        new_Data.to_csv(f"{CONCATENATED_DATA_PATH}/{basefile}.csv", index=False)
-    return
-
 # Concatenate the individual training data files into one training data file
 def ConcatenateFiles_Multiple():
     for basefile in training_files:
@@ -80,8 +68,5 @@ def ConcatenateFiles_Multiple():
         new_Data = pd.concat(data)
         new_Data.to_csv(f"{CONCATENATED_DATA_PATH}/{basefile}.csv", index=False)
 
-if GROUPING_MODE == 1:
-    GetFiles()
-    ConcatenateFiles_Multiple()
-else:
-    ConcatenateFiles_All()
+GetFiles()
+ConcatenateFiles_Multiple()
