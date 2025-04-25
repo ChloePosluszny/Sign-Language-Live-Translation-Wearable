@@ -52,6 +52,8 @@ MODEL_PATH_LOCAL = None
 LABEL_ENCODER_PATH = None
 SCALER_PATH = None
 
+
+flex = 3200
 # threshold = -7.5
 
 # Predefined sensor names (modify as needed for your setup)
@@ -99,7 +101,7 @@ def update_prediction_buffer(predicted_label):
     print(f"Prediction Buffer: {prediction_buffer}\n")
     
     if len(prediction_buffer) == BUFFER_SIZE and len(set(prediction_buffer)) == 1:
-        print(f"\033[33mWait for Model load\033[0m")
+        # print(f"\033[33mWait for Model load\033[0m")
         WORD += sign
         prediction_buffer.clear()  
    
@@ -172,7 +174,8 @@ def process_poll(poll_data):
         elif "_R" in MODEL_PATH_LOCAL:
             combined_data = poll_data[1] 
     elif config.GLOVE_MODE == "DOUBLE":
-        combined_data = poll_data[0] + poll_data[1]      
+        combined_data = poll_data[0] + poll_data[1]     
+        print(combined_data) 
     else:  # SINGLE mode
         combined_data = poll_data[0]
 
@@ -196,14 +199,15 @@ def process_poll(poll_data):
                 print("Data written to CSV.")
             return True
     else:
+    
         if combined_data:
             RNN_buffer.append(combined_data)
             if(len(RNN_buffer) == seq_len):
                 translate_data()
-           
                 RNN_buffer = []
             return True
         else:
+            print("NO COMBINED DATA??")
             return True
         
 def parse_line_to_array(line):
@@ -255,7 +259,7 @@ def update_glove_mode():
 
         
         flex = 3200
-        if (y_left <threshold and left[3] > flex and left[4] > flex  and left[5] > 2500 and left[6] > flex and left[7] > flex)  or (y_right < threshold and right[3] > 3000 and right[4] > flex  and right[5] > flex and right[6] > flex and right[7] > flex) :
+        if (is_glove_deactivated(left) or is_glove_deactivated(right)) :
             
             # Use only the active glove
             if y_left >= threshold:
@@ -331,27 +335,7 @@ def Collect_double_glove_data():
                 RIGHT_DATA = None
 
             while samples_collected < seq_len:
-                if config.GLOVE_MODE == "DOUBLE":
-                    with left_lock:
-                        left = LEFT_DATA
-                    with right_lock:
-                        right = RIGHT_DATA
-
-                    if left and right:
-                        poll_data = [left, right]
-                        if process_poll(poll_data): 
-                            samples_collected += 1
-                        with left_lock:
-                            LEFT_DATA = None
-                        with right_lock:
-                            RIGHT_DATA = None
-
-    else:
-        poll_data = []
-        samples_collected = 0
-       
-        while samples_collected < seq_len:
-            if config.GLOVE_MODE == "DOUBLE":
+                
                 with left_lock:
                     left = LEFT_DATA
                 with right_lock:
@@ -359,16 +343,38 @@ def Collect_double_glove_data():
 
                 if left and right:
                     poll_data = [left, right]
+                  
                     if process_poll(poll_data): 
                         samples_collected += 1
-                    
-                    if samples_collected != 20:
-                        with left_lock:
-                            LEFT_DATA = None
-                        with right_lock:
-                            RIGHT_DATA = None
+                    with left_lock:
+                        LEFT_DATA = None
+                    with right_lock:
+                        RIGHT_DATA = None
+    
+            # time.sleep(0.01) 
+    else:
+        poll_data = []
+        samples_collected = 0
+       
+        while samples_collected < seq_len:
+    
+            with left_lock:
+                left = LEFT_DATA
+            with right_lock:
+                right = RIGHT_DATA
 
-def read_serial_data_d(com_port, hand):
+            if left and right:
+                poll_data = [left, right]
+                if process_poll(poll_data): 
+                    samples_collected += 1
+                
+                if samples_collected != 20:
+                    with left_lock:
+                        LEFT_DATA = None
+                    with right_lock:
+                        RIGHT_DATA = None
+
+def read_serial_data_double(com_port, hand):
     global LEFT_DATA, RIGHT_DATA
   
     try:
@@ -399,19 +405,21 @@ def read_serial_data_d(com_port, hand):
     except serial.SerialException as e:
         print(f"Error opening {com_port}: {e}")
 
-def read_serial_data():
-    global WORD
+def read_serial_data_single():
+    global WORD, RNN_buffer
     poll_data = []
     expected_arrays = 2 if config.GLOVE_MODE == "DOUBLE" else 1
-    serial.Serial(config.COM_PORT, BAUD_RATE, timeout=1).close()
+    printed = False  # For testing mode, handles glove deactivation printing
+
     try:
-        with serial.Serial(config.COM_PORT, BAUD_RATE, timeout=1) as ser:
-            print(f"Connected to {config.COM_PORT} in {config.COMM_MODE} mode.")
+        with serial.Serial(config.LEFT_COM, BAUD_RATE, timeout=1) as ser:
+            print(f"Connected to {config.LEFT_COM}")
             buffer = ''
+
             if config.TRAINING_MODE:
                 for i in range(iterations):
-                    input(f"Press ENTER when ready to sign {CSV_TITLE} Current iteration: {i +1}")
-                    ser.reset_input_buffer()  # Flush old data
+                    input(f"Press ENTER when ready to sign {CSV_TITLE} Current iteration: {i + 1}")
+                    ser.reset_input_buffer()
                     poll_data = []
                     samples_collected = 0
 
@@ -425,27 +433,20 @@ def read_serial_data():
                                 buffer = buffer[line_end + 1:]
 
                                 data_array = parse_line_to_array(line)
-                                if data_array: #maybe do error checking here
+                                if len(data_array) == feature_length:
                                     poll_data.append(data_array)
                                     if len(poll_data) == expected_arrays:
                                         if process_poll(poll_data):
                                             samples_collected += 1
                                         poll_data.clear()
-                    else:
-                        time.sleep(0.01)
-            else: #testing
-                while (1):
-                    expected_arrays = 2 if config.GLOVE_MODE == "DOUBLE" else 1 
-                     
-                    # user_in = input(f"Press ENTER when ready ")
-                    # if user_in == "p":
-                    #     print(f"\033[35m{WORD}\033[0m")
-                    #     continue
-                    # if user_in == "d":
-                    #     WORD = WORD[:-1]
-                    #     print(f"\033[35m{WORD}\033[0m")
-                    #     continue
-                    ser.reset_input_buffer()  # Flush old data
+                                else:
+                                    print(f"Invalid data length: {line}")
+                    time.sleep(0.01)
+
+            else:  # TESTING MODE
+                expected_arrays = 1  # SINGLE mode
+                while True:
+                    ser.reset_input_buffer()
                     poll_data = []
                     samples_collected = 0
 
@@ -459,20 +460,49 @@ def read_serial_data():
                                 buffer = buffer[line_end + 1:]
 
                                 data_array = parse_line_to_array(line)
-                                if data_array:
+                                if len(data_array) == feature_length:
                                     poll_data.append(data_array)
                                     if len(poll_data) == expected_arrays:
                                         if process_poll(poll_data):
+                                         
+                                            if printed:
+                                                RNN_buffer = []
+                                            if not printed:
+                                                if (is_glove_deactivated(data_array)):
+                                                    RNN_buffer = []
+                                                    print("\033[35mGloves deactivated\033[0m")
+                                                    print(f"y accelerometer: {data_array[9]}")
+                                                    print(f"Flex sensors: {data_array[3]}, {data_array[4]}, {data_array[5]}, {data_array[6]}, {data_array[7]}")
+                                                    printSign()
+                                                    printed = True
+
+                                            elif not is_glove_deactivated(data_array):
+                                                # print("is active")
+                                                printed = False
+
                                             samples_collected += 1
                                         poll_data = []
-                    else:
-                        time.sleep(0.01)
+                                else:
+                                    print(f"Invalid data length: {line}")
+
+                    time.sleep(0.01)
+
     except serial.SerialException as e:
         print(f"Serial error: {e}")
     except KeyboardInterrupt:
         print("Stopped by user.")
     finally:
         print("Port closed")
+
+def is_glove_deactivated(data_array):
+    return (
+        (data_array[9] < threshold and data_array[3] > flex and data_array[4] > flex and 
+         data_array[5] > 2500 and data_array[6] > flex and data_array[7] > flex and data_array[14] == 0)
+        or
+        (data_array[9] < threshold and data_array[3] > 3000 and data_array[4] > flex and 
+         data_array[5] > flex and data_array[6] > flex and data_array[7] > flex and data_array[14] == 1)
+    )
+
 
 # Prompt the user for the CSV title; this will be used as the file name (with .csv extension)
 # and appended to each row.
@@ -495,7 +525,8 @@ def get_user_input():
 def printSign():
     global MODEL_PATH_LOCAL
     if not MODEL_PATH_LOCAL: #only print if hands are down
-        print(f"\033[38;2;255;165;0m{WORD}\033[0m")
+        print(f"\033[38;2;255;165;0mFull Sign: {WORD}\033[0m")
+
 
     
 
@@ -507,11 +538,11 @@ def mainsingle():
         iterations = int(input("Enter number of data points to be signed: "))
         while True: 
             get_user_input()
-            read_serial_data()
+            read_serial_data_single()
     # In output mode, load the ML model.
     if not config.TRAINING_MODE:
-        load_model()
-    read_serial_data()
+        load_model(config.HAND)
+    read_serial_data_single()
 
 
 
@@ -521,9 +552,11 @@ def maindouble():
         global CSV_SUBTITLE, iterations
         
         iterations = int(input("Enter number of data points to be signed: "))
+        
+        print(CSV_SUBTITLE)
 
-        left_thread = threading.Thread(target=read_serial_data_d, args=(config.LEFT_COM, "LEFT"), daemon= True)
-        right_thread = threading.Thread(target=read_serial_data_d, args=(config.RIGHT_COM, "RIGHT"), daemon= True)
+        left_thread = threading.Thread(target=read_serial_data_double, args=(config.LEFT_COM, "LEFT"), daemon= True)
+        right_thread = threading.Thread(target=read_serial_data_double, args=(config.RIGHT_COM, "RIGHT"), daemon= True)
     
         left_thread.start()
         right_thread.start()
@@ -536,8 +569,8 @@ def maindouble():
     else:
      
 
-        left_thread = threading.Thread(target=read_serial_data_d, args=(config.LEFT_COM, "LEFT"), daemon= True)
-        right_thread = threading.Thread(target=read_serial_data_d, args=(config.RIGHT_COM, "RIGHT"), daemon= True)
+        left_thread = threading.Thread(target=read_serial_data_double, args=(config.LEFT_COM, "LEFT"), daemon= True)
+        right_thread = threading.Thread(target=read_serial_data_double, args=(config.RIGHT_COM, "RIGHT"), daemon= True)
        
         left_thread.start()
         right_thread.start()
