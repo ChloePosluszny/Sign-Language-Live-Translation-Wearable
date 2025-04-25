@@ -508,10 +508,12 @@ def is_glove_deactivated(data_array):
  
     return (
         (data_array[9] < threshold and data_array[3] > flex and data_array[4] > flex and 
-         data_array[5] > flex and data_array[6] > flex and data_array[7] > flex and data_array[14] == 0)
+         data_array[5] > flex and data_array[6] > flex and data_array[7] > flex and data_array[14] == 0
+         and abs(data_array[11]) < 1 and abs(data_array[12]) < 1 and abs(data_array[13]) < 1)
         or
         (data_array[9] < threshold and data_array[3] > flex and data_array[4] > flex and 
-         data_array[5] > flex and data_array[6] > flex and data_array[7] > flex and data_array[14] == 1)
+         data_array[5] > flex and data_array[6] > flex and data_array[7] > flex and data_array[14] == 1
+         and abs(data_array[11]) < 1 and abs(data_array[12]) < 1 and abs(data_array[13]) < 1)
     )
 
 
