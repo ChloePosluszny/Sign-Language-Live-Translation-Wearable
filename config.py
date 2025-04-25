@@ -7,7 +7,7 @@ TRAINER_NAME = 'DAVID'
 GLOVE_MODE = "DOUBLE"         # Options: "DOUBLE" (expect 2 arrays) or "SINGLE" (expect 1 array)
 TIMER_MODE = True
 LEFT_COM = 'COM3'
-RIGHT_COM = 'COM6'
+RIGHT_COM = 'COM5'
 HAND = "D" # captial D, R, or L depending on hand being used
 
 COMMON_PATH = os.path.join("Models", trainer_names[TRAINER_NAME])

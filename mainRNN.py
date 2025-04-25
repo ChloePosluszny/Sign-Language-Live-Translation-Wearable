@@ -12,6 +12,7 @@ from Train_RNN import RNN
 import warnings
 import config
 import threading
+from wordhelper import load_names, insert_spaces_for_names
 warnings.filterwarnings('ignore')
 
 # -------------------------------
@@ -48,6 +49,7 @@ prediction_buffer = []
 BUFFER_SIZE = 3
 flex = 2500
 threshold = -8.8
+printed = False  # For testing mode, handles glove deactivation printing
 
 MODEL_PATH_LOCAL = None
 LABEL_ENCODER_PATH = None
@@ -67,7 +69,7 @@ def load_model(hand):
     global label_encoder
     
     if hand == "clear":
-        print(f"Clearing loaded model and Buffer")
+        # print(f"Clearing loaded model and Buffer")
         prediction_buffer.clear()
         model = None
         scaler = None
@@ -100,7 +102,10 @@ def update_prediction_buffer(predicted_label):
     
     if len(prediction_buffer) == BUFFER_SIZE and len(set(prediction_buffer)) == 1:
         # print(f"\033[33mWait for Model load\033[0m")
-        WORD += sign
+        if len(sign) > 1:
+            WORD += f' {sign} '
+        else:
+            WORD += sign
         prediction_buffer.clear()  
    
     
@@ -173,7 +178,7 @@ def process_poll(poll_data):
             combined_data = poll_data[1] 
     elif config.GLOVE_MODE == "DOUBLE":
         combined_data = poll_data[0] + poll_data[1]     
-        print(combined_data) 
+      
     else:  # SINGLE mode
         combined_data = poll_data[0]
 
@@ -234,7 +239,7 @@ def print_sensor_data_rnn(data: list):
 
 
 def update_glove_mode():
-    global LEFT_DATA, RIGHT_DATA, MODEL_PATH_LOCAL, LABEL_ENCODER_PATH, SCALER_PATH, threshold
+    global LEFT_DATA, RIGHT_DATA, MODEL_PATH_LOCAL, LABEL_ENCODER_PATH, SCALER_PATH, threshold, printed,WORD
 
     global RNN_buffer
     RNN_buffer = []
@@ -247,11 +252,11 @@ def update_glove_mode():
     if left and right:
         if left[14] == 1:
            print(f"\033[31mERROR: {config.LEFT_COM} for Left Glove is connected to the Right Glove\033[0m")
-        print(f"[LEFT] y accelerometer: {left[9]}")
-        print(f"[LEFT] Flex sensors: {left[3]}, {left[4]}, {left[5]}, {left[6]}, {left[7]}")
+        # print(f"[LEFT] y accelerometer: {left[9]}")
+        # print(f"[LEFT] Flex sensors: {left[3]}, {left[4]}, {left[5]}, {left[6]}, {left[7]}")
 
-        print(f"[RIGHT] y accelerometer: {right[9]}")
-        print(f"[RIGHT] Flex sensors: {right[3]}, {right[4]}, {right[5]}, {right[6]}, {right[7]}")
+        # print(f"[RIGHT] y accelerometer: {right[9]}")
+        # print(f"[RIGHT] Flex sensors: {right[3]}, {right[4]}, {right[5]}, {right[6]}, {right[7]}")
         y_left = left[9]
         y_right = right[9]
 
@@ -270,6 +275,7 @@ def update_glove_mode():
                     SCALER_PATH = os.path.join(config.COMMON_PATH, f"scaler_L.pkl")
                     prediction_buffer.clear()
                     load_model("L")
+                    printed = False
                     print(f"\033[33mWait for Model load\033[0m")
                     time.sleep(2)
 
@@ -284,14 +290,20 @@ def update_glove_mode():
                     prediction_buffer.clear()
                     load_model("R")
                     print(f"\033[33mWait for Model load\033[0m")
+                    printed = False
                     time.sleep(2)
                 
             else:
-                print("\033[35mBoth gloves deactivated\033[0m")
                 MODEL_PATH_LOCAL = None
                 LABEL_ENCODER_PATH = None
                 SCALER_PATH = None
                 load_model("clear")
+                if not printed:
+                    print(f"Clearing loaded model and Buffer")
+                    print("\033[35mTranslation deactivated\033[0m")
+                    printSign()
+                    WORD = ""
+                    printed = True
 
         else:
             if MODEL_PATH_LOCAL and MODEL_PATH_LOCAL.endswith("RNN_model_D.pth"):
@@ -304,6 +316,7 @@ def update_glove_mode():
                 prediction_buffer.clear()
                 load_model("D")
                 print(f"\033[33mWait for Model load\033[0m")
+                printed = False
                 time.sleep(2)
 
     else:
@@ -312,6 +325,7 @@ def update_glove_mode():
         MODEL_PATH_LOCAL = None
         LABEL_ENCODER_PATH = None
         SCALER_PATH = None
+        printed = False
         load_model("clear")
 
 
@@ -407,7 +421,7 @@ def read_serial_data_single():
     global WORD, RNN_buffer, prediction_buffer
     poll_data = []
     expected_arrays = 2 if config.GLOVE_MODE == "DOUBLE" else 1
-    printed = False  # For testing mode, handles glove deactivation printing
+    
 
     try:
         with serial.Serial(config.LEFT_COM, BAUD_RATE, timeout=1) as ser:
@@ -473,7 +487,7 @@ def read_serial_data_single():
                                             if not printed:
                                                 if (is_glove_deactivated(data_array)):
                                                     RNN_buffer = []
-                                                    print("\033[35mGloves deactivated\033[0m")
+                                                    print("\033[35mTranslation deactivated\033[0m")
                                                     print(f"y accelerometer: {data_array[9]}")
                                                     print(f"Flex sensors: {data_array[3]}, {data_array[4]}, {data_array[5]}, {data_array[6]}, {data_array[7]}")
                                                     printSign()
@@ -526,11 +540,14 @@ def get_user_input():
     print(CSV_SUBTITLE)
     print(CSV_FILE_PATH)
     return
-
+name_set = None
 def printSign():
-    global MODEL_PATH_LOCAL
+    global MODEL_PATH_LOCAL,name_set
+    name_set = load_names('names.txt')
+    
+    output = insert_spaces_for_names(WORD, name_set).replace("-", " ")
     if not MODEL_PATH_LOCAL: #only print if hands are down
-        print(f"\033[38;2;255;165;0mFull Sign: {WORD}\033[0m")
+        print(f"\033[38;2;255;165;0mFull Sign: {output.replace("  ", " ")}\033[0m")
 
 
 def mainsingle():
@@ -579,7 +596,7 @@ def maindouble():
         time.sleep(1)
         while True:
             update_glove_mode()
-            printSign()
+            
             if MODEL_PATH_LOCAL != None:
                 print(f"\033[33mStart Signing\033[0m")
 
@@ -588,6 +605,8 @@ def maindouble():
 
 
 if __name__ == "__main__":
+  
+
     if config.GLOVE_MODE == "DOUBLE":
         maindouble()
     else:
