@@ -46,15 +46,13 @@ WORD = ''
 feature_length = 15
 prediction_buffer = []
 BUFFER_SIZE = 3
+flex = 2500
 threshold = -8.8
 
 MODEL_PATH_LOCAL = None
 LABEL_ENCODER_PATH = None
 SCALER_PATH = None
 
-
-flex = 3200
-# threshold = -7.5
 
 # Predefined sensor names (modify as needed for your setup)
 HEADER = ["hall_1", "hall_2", "hall_3", "flex_t", "flex_i", "flex_m", "flex_r", "flex_p", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z", "hand", "sign"]
@@ -258,7 +256,7 @@ def update_glove_mode():
         y_right = right[9]
 
         
-        flex = 3200
+       
         if (is_glove_deactivated(left) or is_glove_deactivated(right)) :
             
             # Use only the active glove
@@ -406,7 +404,7 @@ def read_serial_data_double(com_port, hand):
         print(f"Error opening {com_port}: {e}")
 
 def read_serial_data_single():
-    global WORD, RNN_buffer
+    global WORD, RNN_buffer, prediction_buffer
     poll_data = []
     expected_arrays = 2 if config.GLOVE_MODE == "DOUBLE" else 1
     printed = False  # For testing mode, handles glove deactivation printing
@@ -480,6 +478,7 @@ def read_serial_data_single():
                                                     print(f"Flex sensors: {data_array[3]}, {data_array[4]}, {data_array[5]}, {data_array[6]}, {data_array[7]}")
                                                     printSign()
                                                     printed = True
+                                                    prediction_buffer.clear()
 
                                             elif not is_glove_deactivated(data_array):
                                                 # print("is active")
@@ -500,11 +499,12 @@ def read_serial_data_single():
         print("Port closed")
 
 def is_glove_deactivated(data_array):
+ 
     return (
         (data_array[9] < threshold and data_array[3] > flex and data_array[4] > flex and 
-         data_array[5] > 2500 and data_array[6] > flex and data_array[7] > flex and data_array[14] == 0)
+         data_array[5] > flex and data_array[6] > flex and data_array[7] > flex and data_array[14] == 0)
         or
-        (data_array[9] < threshold and data_array[3] > 3000 and data_array[4] > flex and 
+        (data_array[9] < threshold and data_array[3] > flex and data_array[4] > flex and 
          data_array[5] > flex and data_array[6] > flex and data_array[7] > flex and data_array[14] == 1)
     )
 
@@ -533,8 +533,6 @@ def printSign():
         print(f"\033[38;2;255;165;0mFull Sign: {WORD}\033[0m")
 
 
-    
-
 def mainsingle():
     if config.TRAINING_MODE:
         global CSV_SUBTITLE
@@ -546,8 +544,48 @@ def mainsingle():
             read_serial_data_single()
     # In output mode, load the ML model.
     if not config.TRAINING_MODE:
-        load_model()
-    read_serial_data()
+        load_model(config.HAND)
+    read_serial_data_single()
+
+
+def maindouble():
+    if config.TRAINING_MODE:
+        global CSV_SUBTITLE, iterations
+        
+        iterations = int(input("Enter number of data points to be signed: "))
+        
+        print(CSV_SUBTITLE)
+
+        left_thread = threading.Thread(target=read_serial_data_double, args=(config.LEFT_COM, "LEFT"), daemon= True)
+        right_thread = threading.Thread(target=read_serial_data_double, args=(config.RIGHT_COM, "RIGHT"), daemon= True)
+    
+        left_thread.start()
+        right_thread.start()
+
+        # Run training loop
+        while True: 
+            get_user_input()
+            Collect_double_glove_data()
+    
+    else:
+     
+
+        left_thread = threading.Thread(target=read_serial_data_double, args=(config.LEFT_COM, "LEFT"), daemon= True)
+        right_thread = threading.Thread(target=read_serial_data_double, args=(config.RIGHT_COM, "RIGHT"), daemon= True)
+       
+        left_thread.start()
+        right_thread.start()
+
+        time.sleep(1)
+        while True:
+            update_glove_mode()
+            printSign()
+            if MODEL_PATH_LOCAL != None:
+                print(f"\033[33mStart Signing\033[0m")
+
+            Collect_double_glove_data()
+           
+
 
 if __name__ == "__main__":
     if config.GLOVE_MODE == "DOUBLE":
