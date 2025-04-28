@@ -590,7 +590,9 @@ def maindouble():
             update_glove_mode()
             
             if MODEL_PATH_LOCAL != None:
+                time.sleep(1)
                 print(f"\033[33mStart Signing\033[0m")
+                
 
             Collect_double_glove_data()
            

@@ -16,11 +16,11 @@ warnings.filterwarnings('ignore')
 # -------------------------------
 # Communication Port Configuration
 # -------------------------------
-BLUETOOTH_COM_PORT = 'COM5'   # Port for Bluetooth
+#BLUETOOTH_COM_PORT = 'COM5'   # Port for Bluetooth
 SERIAL_COM_PORT = 'COM3'      # Port for direct serial connection (e.g., USB)
 
 # Select the appropriate COM port based on COMM_MODE
-COM_PORT = BLUETOOTH_COM_PORT if config.COMM_MODE == "BLUETOOTH" else SERIAL_COM_PORT
+COM_PORT = SERIAL_COM_PORT
 BAUD_RATE = 115200           # Must match the ESP32's baud rate
 
 # -------------------------------
@@ -204,7 +204,7 @@ def read_serial_data():
 
     try:
         with serial.Serial(COM_PORT, BAUD_RATE, timeout=1) as ser:
-            print(f"Connected to {COM_PORT} in {config.COMM_MODE} mode.")
+            print(f"Connected to {COM_PORT}")
             buffer = ''
             if config.TRAINING_MODE:
                 start_time = time.time()
